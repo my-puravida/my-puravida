@@ -3808,6 +3808,29 @@ function mealClose(){var el=document.getElementById('mlsheet');if(el)el.parentNo
   st.textContent='.actc img.mxb{width:84%;height:84%}.ics .ic span img.mxb{width:84%;height:84%}';
   document.head.appendChild(st);
 })();
+/* Page du jour : humeur devant les cristaux, singes sous la plage (meme taille) */
+(function(){
+  var _dpy=dayPage;
+  dayPage=function(){
+    var h=_dpy();
+    var mm=h.match(/<div onclick="mdOpen\(\)">([\s\S]*?)<\/div>/);
+    var mk=h.match(/<div class="d3m"[\s\S]*?<\/div>/);
+    if(!mm||!mk||h.indexOf('<span class="dtr">')<0)return h;
+    var sp=mm[1].match(/<span class="d3c[^"]*">[\s\S]*?<\/span>/);
+    if(!sp)return h;
+    h=h.replace(mm[0],'').replace(mk[0],'');
+    h=h.replace(/(<div class="d3r">[\s\S]*?<\/div>)(<\/div>)/,function(m,a,b){return a+mk[0]+b});
+    var mb='<button class="dmd" aria-label="Humeur" onclick="mdOpen()">'+sp[0]+'</button>';
+    return h.replace('<span class="dtr">','<span class="dtr">'+mb);
+  };
+  var st=document.createElement('style');
+  st.textContent='.dfull .dtr .dmd{border:0;padding:0;background:none;width:34px;height:34px;flex:0 0 auto;cursor:pointer}'
+   +'.dfull .dtr .dmd .d3c{width:34px;height:34px}'
+   +'.mcard .d3r .d3c{width:32px;height:32px}'
+   +'.mcard .d3r .d3m{position:static;bottom:auto;right:auto;gap:4px}'
+   +'.d3o .dsm-r,.d3o .ds-none{padding-right:0}';
+  document.head.appendChild(st);
+})();
 render();
 </script>
 <script>

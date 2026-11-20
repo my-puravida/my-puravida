@@ -1,6 +1,6 @@
 /* Service worker - Mon agenda
    Pour publier une mise à jour : change le numéro de VERSION ci-dessous. */
-const VERSION = 'v24';
+const VERSION = 'v25';
 const CACHE = 'agenda-' + VERSION;
 const FONTS = 'agenda-fonts';
 const SHELL = [
@@ -11,6 +11,16 @@ const SHELL = [
   './icon-512.png',
   './icon-maskable-512.png',
   './apple-touch-icon.png',
+  './style.css',
+  './style-late.css',
+  './app-core1.js',
+  './app-core2.js',
+  './app-day.js',
+  './app-icons.js',
+  './app-week-home.js',
+  './app-day2.js',
+  './app-extras.js',
+  './app-vault.js',
   './img-act-aq.webp',
   './img-act-fx.webp',
   './img-act-mx.webp',

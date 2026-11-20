@@ -1,6 +1,6 @@
 /* Service worker - Mon agenda
    Pour publier une mise à jour : change le numéro de VERSION ci-dessous. */
-const VERSION = 'v23';
+const VERSION = 'v24';
 const CACHE = 'agenda-' + VERSION;
 const FONTS = 'agenda-fonts';
 const SHELL = [
@@ -10,7 +10,37 @@ const SHELL = [
   './icon-192.png',
   './icon-512.png',
   './icon-maskable-512.png',
-  './apple-touch-icon.png'
+  './apple-touch-icon.png',
+  './img-act-aq.webp',
+  './img-act-fx.webp',
+  './img-act-mx.webp',
+  './img-act-px.webp',
+  './img-act-sx.webp',
+  './img-act-tm.webp',
+  './img-act-tp.webp',
+  './img-act-wx.webp',
+  './img-act-yx.webp',
+  './img-bl.webp',
+  './img-crystal.webp',
+  './img-dt-arr.webp',
+  './img-dt-cat.webp',
+  './img-dt-dep.webp',
+  './img-dt-family.webp',
+  './img-dt-other.webp',
+  './img-el.webp',
+  './img-header.webp',
+  './img-hero.webp',
+  './img-mk.png',
+  './img-plank.webp',
+  './img-tramp.webp',
+  './img-wa.webp',
+  './img-wx0.webp',
+  './img-wx1.webp',
+  './img-wx2.webp',
+  './img-wx3.webp',
+  './img-wx4.webp',
+  './img-wx5.webp',
+  './img-wx6.webp'
 ];
 
 self.addEventListener('install', (e) => {

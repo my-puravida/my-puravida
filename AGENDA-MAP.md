@@ -112,3 +112,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 6: Backup screen simplified to two buttons ("Tout exporter" / "Tout restaurer"); `sw.js` at v28.
 - Step 7: "Tout exporter" now makes only zip files (backup inside the first one); `sw.js` at v29.
 - Step 8: after "Tout exporter", a Share window (Proton Drive...) or download; `sw.js` at v30.
+- Step 9: share errors now show the technical detail; `sw.js` at v31.

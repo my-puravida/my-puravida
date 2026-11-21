@@ -322,9 +322,15 @@
       +'<button id="phsh3" style="'+bs+';border:0;background:transparent;color:#999">Fermer</button></div>';
     document.body.appendChild(o);
     document.getElementById('phsh1').onclick=function(){
-      navigator.share({files:files,title:'Sauvegarde agenda'}).then(function(){o.remove();markBackup()}).catch(function(e){
+      function fail(e){
         if(e&&e.name==='AbortError')return;
-        alert('Le partage n’a pas fonctionné (fichiers trop gros ?). Utilise « Télécharger sur le téléphone ».');
+        alert('Le partage n’a pas fonctionné.\nDétail : '+(e&&e.name?e.name:'?')+(e&&e.message?' – '+String(e.message).slice(0,160):'')+'\nUtilise « Télécharger sur le téléphone ».');
+      }
+      function ok(){o.remove();markBackup()}
+      navigator.share({files:files,title:'Sauvegarde agenda'}).then(ok).catch(function(e){
+        if(e&&e.name==='AbortError')return;
+        /* 2e essai : sans titre */
+        navigator.share({files:files}).then(ok).catch(fail);
       });
     };
     document.getElementById('phsh2').onclick=function(){o.remove();downloadFiles(files,nPhotos)};

@@ -6,7 +6,7 @@ Attach this file to every modification request. Claude tells me which files to s
 ## Rules for every modification (Claude must follow)
 
 1. **Always ask me for `sw.js`**, every time, even for a tiny change. Return it with the version number raised (`const VERSION = 'v25'` -> `'v26'`, etc.), otherwise the phone keeps showing the old version.
-2. If a file is **added, renamed or deleted**, add or remove it in the `SHELL` list of `sw.js`.
+2. If a file is **added, renamed or deleted**, add or remove it in the `SHELL` list of `sw.js`. (`sw.js` installs with `cache: 'reload'` so the phone always downloads the fresh files when `VERSION` changes.)
 3. Use the "Screen -> files to ask for" table to decide which file(s) to request, and **only edit those**. Never guess the content of a file I have not sent.
 4. Return only the changed files, plus the updated `sw.js` and this map (with a new line in the change log).
 5. Show a preview first when possible, so I can ask for changes before uploading to GitHub.
@@ -113,3 +113,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 7: "Tout exporter" now makes only zip files (backup inside the first one); `sw.js` at v29.
 - Step 8: after "Tout exporter", a Share window (Proton Drive...) or download; `sw.js` at v30.
 - Step 9: share errors now show the technical detail; `sw.js` at v31.
+- Step 10: `sw.js` v32 installs with `cache: 'reload'` (fixes the phone keeping an old copy of a file after an update).

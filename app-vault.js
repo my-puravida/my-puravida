@@ -252,51 +252,11 @@
     done:function(){startTimer();vault()}
   };
 
-  /* jardin secret du jour */
-  window.secDay=function(){
-    var k=dy[0]+'-'+(dy[1]+1)+'-'+dy[2];
-    openThen(function(){editor('d',k,true)});
-  };
-  var GARDEN='<div class="sgd" role="button" aria-label="Jardin secret" onclick="secDay()"><span class="sgr"></span><span class="sgk">'+LOCK.replace('width="30" height="30"','width="18" height="18"')+'</span></div>';
-  var _dpS=dayPage;
-  dayPage=function(){return _dpS()+GARDEN};
-
-  /* post-it barre dans les notes importantes */
-  var BARRE='<div class="sbp" role="button" aria-label="Note verrouill\u00e9e" onclick="secOpen()"><i class="sbt"></i><div class="sbq"><s>vieux brouillon</s></div><span class="sbl">'+LOCK.replace('width="30" height="30"','width="20" height="20"')+'</span></div>';
-  var _nhS=notesHTML;
-  notesHTML=function(){
-    var h=_nhS();
-    try{
-      var tpl=document.createElement('template');tpl.innerHTML=h;
-      var tmc=tpl.content.querySelector('.tmc');
-      if(tmc&&tpl.content.querySelector('.nn')){tmc.insertAdjacentHTML('beforeend',BARRE);return tpl.innerHTML}
-    }catch(e){}
-    return h;
-  };
-
-  /* calculatrice : 6 chiffres puis "=" */
-  var _ckS=calcKey;
-  calcKey=function(k){
-    if(k==='='&&CA.op===null&&/^\d{6}$/.test(CA.cur)&&window.secExists()&&hasCrypto()){
-      var code=CA.cur;
-      if(cooldown()>0)return;
-      unlock(code).then(function(ok){
-        if(ok){okReset();CA={cur:'0',prev:null,op:null,fresh:true,expr:''};OV=null;ovUI();startTimer();vault()}
-        else failed();
-      });
-      return;
-    }
-    return _ckS(k);
-  };
-
-  /* appui long (0,8 s) sur le grand chiffre du jour ou sur l'icone Pura Vida */
+  /* seul acces : appui long (0,8 s) sur le grand chiffre du jour de l'accueil */
   var lp=null;
   function target(el){
     if(!el||!el.closest)return null;
-    var n=el.closest('.hero .hn');if(n)return n;
-    var b=el.closest('.actb');
-    if(b){var oc=b.getAttribute('onclick')||'';if(oc.indexOf("'sx'")>=0||oc.indexOf('"sx"')>=0)return b}
-    return null;
+    return el.closest('.hero .hn');
   }
   function lpStart(e){
     var t=target(e.target);if(!t)return;
@@ -322,7 +282,7 @@
   },true);
 
   var st=document.createElement('style');
-  st.textContent='.hero .hn,.actb{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}'
+  st.textContent='.hero .hn{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}'
    +'.secx{position:fixed;inset:0;z-index:10040;background:linear-gradient(180deg,#f9f8f6,#f3e7e7);color:#39393b;display:flex;flex-direction:column;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:calc(env(safe-area-inset-top,0px) + 10px) 18px calc(env(safe-area-inset-bottom,0px) + 24px);box-sizing:border-box}'
    +'.sxh{display:flex;justify-content:flex-end;align-items:center;padding:6px 0}.sxh2{justify-content:space-between;gap:10px}'
    +'.sxc{width:40px;height:40px;border-radius:50%;border:0;background:rgba(255,255,255,.85);color:#525156;font-size:18px;cursor:pointer;box-shadow:0 6px 12px -8px rgba(57,57,59,.5)}'
@@ -348,15 +308,7 @@
    +'.sxcard{background:#fff;border:1px solid #e8ced1;border-radius:18px;padding:12px 14px;margin-bottom:10px;box-shadow:0 10px 16px -14px rgba(57,57,59,.5);cursor:pointer}.sxcard b{display:block;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:#707072;font-weight:600}.sxcard span{display:block;margin-top:4px;font-size:14px;color:#39393b;line-height:1.45}'
    +'.sxset{display:flex;flex-direction:column;align-items:center;gap:4px;margin-top:22px}.sxset button{border:0;background:none;color:#707072;font:inherit;font-size:12px;letter-spacing:.08em;text-decoration:underline;cursor:pointer;padding:6px}'
    +'.sxed{position:relative;flex:0 0 auto}.sxta{display:block;width:100%;box-sizing:border-box;min-height:260px;border:1px solid #e8ced1;border-radius:20px;background:#fff;padding:16px 18px 56px;font:inherit;font-size:16.5px;line-height:1.7;color:#39393b;resize:none;outline:none;overflow:hidden}'
-   +'.sxmic{position:absolute;right:12px;bottom:12px;margin:0}'
-   +'.sgd{position:relative;height:34px;margin:4px 4px 40px;display:flex;align-items:center;justify-content:center;cursor:pointer}'
-   +'.sgr{position:absolute;left:0;right:0;top:50%;height:12px;margin-top:-6px;border-radius:6px;background:repeating-linear-gradient(135deg,#d4d3d1 0 6px,#f1f0ee 6px 12px);box-shadow:inset 0 0 0 1px rgba(82,81,86,.18)}'
-   +'.sgk{position:relative;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#707072;background:radial-gradient(circle at 32% 26%,#fff,#f3e7e7 70%);box-shadow:0 8px 12px -8px rgba(57,57,59,.6),inset 0 0 0 1px #d4d3d1}'
-   +'.sbp{position:relative;margin:22px 8px 14px;padding:26px 16px 22px;border-radius:3px;background:#e7e3e0;transform:rotate(1deg);box-shadow:0 12px 18px -12px rgba(57,57,59,.55),0 1px 1px rgba(57,57,59,.2);cursor:pointer;overflow:hidden;text-align:center}'
-   +'.sbt{position:absolute;left:-10px;right:-10px;top:8px;height:14px;transform:rotate(-1.5deg);background:repeating-linear-gradient(45deg,#39393b 0 9px,#e8ced1 9px 18px);opacity:.85}'
-   +'.sbq{font-family:"Lora",Georgia,serif;font-style:italic;font-size:19px;color:#929093;padding:22px 0 8px}.sbq s{text-decoration-thickness:2px}'
-   +'.sbp::after{content:"";position:absolute;inset:0;background:linear-gradient(to top right,transparent calc(50% - 1.5px),rgba(57,57,59,.55) 50%,transparent calc(50% + 1.5px)),linear-gradient(to bottom right,transparent calc(50% - 1.5px),rgba(57,57,59,.55) 50%,transparent calc(50% + 1.5px));pointer-events:none}'
-   +'.sbl{position:absolute;right:10px;bottom:8px;color:#707072;z-index:2;opacity:.8}';
+   +'.sxmic{position:absolute;right:12px;bottom:12px;margin:0}';
   document.head.appendChild(st);
 })();
 /* Aqua : nouvelle activite, a droite du trampoline */

@@ -6,7 +6,7 @@ Attach this file to every modification request. Claude tells me which files to s
 ## Rules for every modification (Claude must follow)
 
 1. **Always ask me for `sw.js`**, every time, even for a tiny change. Return it with the version number raised (`const VERSION = 'v25'` -> `'v26'`, etc.), otherwise the phone keeps showing the old version.
-2. If a file is **added, renamed or deleted**, add or remove it in the `SHELL` list of `sw.js`. (`sw.js` installs with `cache: 'reload'` so the phone always downloads the fresh files when `VERSION` changes.)
+2. If a file is **added, renamed or deleted**, add or remove it in the `SHELL` list of `sw.js`.
 3. Use the "Screen -> files to ask for" table to decide which file(s) to request, and **only edit those**. Never guess the content of a file I have not sent.
 4. Return only the changed files, plus the updated `sw.js` and this map (with a new line in the change log).
 5. Show a preview first when possible, so I can ask for changes before uploading to GitHub.
@@ -36,14 +36,10 @@ Attach this file to every modification request. Claude tells me which files to s
 | 6 | `app-day2.js` | Day page icons, photo viewer, 30 min timer, mood, power and water outages, notes sharing |
 | 7 | `app-extras.js` | Photo viewer with zoom, Vision board per year, tides 2027, live Bitcoin, backup reminder, moods and review, week strip, fireworks, voice and lock in notes |
 | 8 | `app-vault.js` | Secret vault (6-digit code, AES encryption), Aqua activity, outages in statistics, final `render()` call |
-| 9 | `app-photos.js` | **Photo storage in IndexedDB** (full-size original + preview), migration of old photos, storage counter, export/import of the original photos as zip files (`phExport`, `agExportAll`, `agRestoreAll`). Redefines `dph`, `vbAdd`, `dpd`, `vbDel`, `bkExport`, `bkHTML` (the Backup screen now has only two buttons: "Tout exporter" and "Tout restaurer"). Must stay last |
 
 Notes:
 - The app was built in layers: many functions are defined several times and the **last definition wins**. When changing a behavior, check later files too.
-- `app-vault.js` runs the first `render()`; `app-photos.js` is loaded after it and must stay the last script.
-- **Photos:** in the saved data (localStorage) a photo is only a reference `idb:<id>`. The image files live in IndexedDB (database `agenda-photos`, stores `full` and `thumb`). `<img src="idb:...">` is turned into a real image automatically by `app-photos.js`. Never store photos as base64 text in localStorage.
-- The normal backup file contains photos as preview-size copies (not the originals). Restoring a backup converts them back into IndexedDB photos.
-- Backup screen = 2 buttons. **"Tout exporter"** downloads only zip files, in parts of about 250 MB: the first zip holds `sauvegarde.json` (the data, photos as previews) plus original photos; the other parts hold more original photos (names like `jour/2026-11-20_1__id.jpg`, `vision/ag-vb_1__id.jpg`). **"Tout restaurer"**: the user picks all the zip files at once; the app restores the data from `sauvegarde.json`, then puts the originals back (matched by day and position, not by id), then reloads. Old `.json` backups from earlier versions can still be picked in "Tout restaurer". After "Tout exporter" prepares the zip files, a small window offers **Partager** (Android share sheet: Proton Drive, Google Drive, e-mail...) or **Télécharger sur le téléphone**. Chrome refuses to share `.zip` files (error "Permission denied"), so the shared copies are named `...zip.txt`; "Tout restaurer" recognizes the backup files by their content (not their name) and accepts them as they are; if the phone has no share support it downloads directly.
+- The very last line of `app-vault.js` runs `render()`. Keep it last.
 
 ## Screen -> files to ask for
 
@@ -79,11 +75,10 @@ For a **purely visual change** (colors, sizes, spacing, fonts) ask for `style.cs
 | Themes / colors | `app-core1.js` | `style.css` |
 | Moods / review | `app-extras.js` | `app-day2.js`, `app-icons.js` |
 | Electricity / water outages | `app-day2.js` | `app-vault.js` (in statistics) |
-| Photo viewer (zoom) | `app-day2.js` | `app-photos.js` (swaps preview for original) |
-| Photo storage / adding and deleting photos / storage counter | `app-photos.js` | `app-core2.js` (day page photo list), `app-core1.js` (Vision board) |
+| Photo viewer (zoom) | `app-day2.js` | - |
 | Voice dictation | `app-icons.js` | `app-extras.js` (micro in notes) |
 | Crystals icon | `app-week-home.js` | - |
-| Secret vault | `app-vault.js` | - |
+| Secret vault (opens only by a long press, 0.8 s, on the big day number of the home page) | `app-vault.js` | - |
 
 ## Images (all at the root)
 
@@ -107,13 +102,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 1: all images moved out of `index.html` into `img-*` files.
 - Step 2: CSS and JS split into `style.css`, `style-late.css` and `app-*.js`; `sw.js` at v25.
 - Step 3: added the screen -> files table.
-- Step 4: photos moved to IndexedDB (`app-photos.js`), originals kept at full quality, old photos migrated automatically, storage counter in the Backup screen; `sw.js` at v26.
-- Step 5: export/import of original photos (zip parts); `sw.js` at v27.
-- Step 6: Backup screen simplified to two buttons ("Tout exporter" / "Tout restaurer"); `sw.js` at v28.
-- Step 7: "Tout exporter" now makes only zip files (backup inside the first one); `sw.js` at v29.
-- Step 8: after "Tout exporter", a Share window (Proton Drive...) or download; `sw.js` at v30.
-- Step 9: share errors now show the technical detail; `sw.js` at v31.
-- Step 10: `sw.js` v32 installs with `cache: 'reload'` (fixes the phone keeping an old copy of a file after an update).
-- Step 11: share uses `.zip.txt` file names (Chrome blocks .zip), restore recognizes files by content; `sw.js` at v34.
-- Step 12: restore copies photo bytes into memory before storing them (files picked from Proton Drive could not be stored by reference), and shows the error name if a photo is ignored; `sw.js` at v35.
-- Step 13: Backup screen text says to download the files from Proton Drive first and pick them from Downloads when restoring (picking directly inside Proton Drive's picker fails on the phone); `sw.js` at v36.
+- Step 4: secret vault now opens only by a long press on the big day number of the home page. Removed the other accesses: Pura Vida/Espagnol icon long press, calculator code + "=", crossed-out post-it in notes, "Jardin secret" lock on the day page. `app-vault.js` edited, `sw.js` at v34.

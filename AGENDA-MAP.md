@@ -43,7 +43,7 @@ Notes:
 - `app-vault.js` runs the first `render()`; `app-photos.js` is loaded after it and must stay the last script.
 - **Photos:** in the saved data (localStorage) a photo is only a reference `idb:<id>`. The image files live in IndexedDB (database `agenda-photos`, stores `full` and `thumb`). `<img src="idb:...">` is turned into a real image automatically by `app-photos.js`. Never store photos as base64 text in localStorage.
 - The normal backup file contains photos as preview-size copies (not the originals). Restoring a backup converts them back into IndexedDB photos.
-- Backup screen = 2 buttons. **"Tout exporter"** downloads the normal backup (`.json`, photos as previews) plus all original photos as zip parts of about 250 MB (names like `jour/2026-11-20_1__id.jpg`, `vision/ag-vb_1__id.jpg`). **"Tout restaurer"**: the user picks the `.json` and all the `.zip` files at once; the app restores the data first, then puts the originals back (matched by day and position, not by id), then reloads. The old buttons (export, restore, restore originals) were removed.
+- Backup screen = 2 buttons. **"Tout exporter"** downloads only zip files, in parts of about 250 MB: the first zip holds `sauvegarde.json` (the data, photos as previews) plus original photos; the other parts hold more original photos (names like `jour/2026-11-20_1__id.jpg`, `vision/ag-vb_1__id.jpg`). **"Tout restaurer"**: the user picks all the zip files at once; the app restores the data from `sauvegarde.json`, then puts the originals back (matched by day and position, not by id), then reloads. Old `.json` backups from earlier versions can still be picked in "Tout restaurer".
 
 ## Screen -> files to ask for
 
@@ -110,3 +110,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 4: photos moved to IndexedDB (`app-photos.js`), originals kept at full quality, old photos migrated automatically, storage counter in the Backup screen; `sw.js` at v26.
 - Step 5: export/import of original photos (zip parts); `sw.js` at v27.
 - Step 6: Backup screen simplified to two buttons ("Tout exporter" / "Tout restaurer"); `sw.js` at v28.
+- Step 7: "Tout exporter" now makes only zip files (backup inside the first one); `sw.js` at v29.

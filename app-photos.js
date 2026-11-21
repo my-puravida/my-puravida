@@ -291,35 +291,61 @@
     a.href=u;a.download=fn;document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(u);a.remove()},120000);
   }
-  window.phExport=function(maxBytes,quiet){
-    var list=listPhotos(),MAX=(typeof maxBytes==='number'&&maxBytes>0)?maxBytes:250*1048576;
-    if(!list.length){if(!quiet)alert('Aucune photo à exporter.');return}
-    var parts=[],cur=[],size=0,k=0;
-    list.reduce(function(p,it){
-      return p.then(function(){
-        toast('Préparation des photos '+(++k)+' / '+list.length+'…');
-        return get('full',it.id).then(function(b){
-          if(!b)return;
-          return b.arrayBuffer().then(function(buf){
-            var e={name:it.name+'__'+it.id+'.'+extOf(b),blob:b,crc:crc32(new Uint8Array(buf))};
-            if(cur.length&&size+b.size>MAX){parts.push(cur);cur=[];size=0}
-            cur.push(e);size+=b.size;
+  function buildBackupJSON(){
+    var d={},ids={};
+    try{for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i);
+      if(/^(ag|agw|agd)-/.test(k)&&k!=='ag-lastbk'){
+        var v=localStorage.getItem(k)||'';d[k]=v;
+        v.replace(/idb:[a-z0-9]+/g,function(m){ids[m]=1});
+      }
+    }}catch(e){}
+    return Promise.all(Object.keys(ids).map(function(r){
+      return get('thumb',r.slice(4)).then(function(b){return b||get('full',r.slice(4))}).then(function(b){return b?b2d(b):null}).then(function(u){return [r,u]});
+    })).then(function(pairs){
+      var map={};pairs.forEach(function(p){if(p[1])map[p[0]]=p[1]});
+      Object.keys(d).forEach(function(k){if(d[k].indexOf('idb:')>=0)d[k]=d[k].replace(/idb:[a-z0-9]+/g,function(m){return map[m]||m})});
+      return JSON.stringify({app:'agenda',v:1,t:new Date().toISOString(),d:d});
+    });
+  }
+  /* Tout exporter : uniquement des fichiers zip. Le 1er contient la sauvegarde (sauvegarde.json) */
+  window.agExportAll=function(maxBytes){
+    var MAX=(typeof maxBytes==='number'&&maxBytes>0)?maxBytes:250*1048576,list=listPhotos();
+    toast('Préparation…');
+    buildBackupJSON().then(function(json){
+      var jb=new Blob([json],{type:'application/json'});
+      return jb.arrayBuffer().then(function(buf){
+        var parts=[],cur=[{name:'sauvegarde.json',blob:jb,crc:crc32(new Uint8Array(buf))}],size=jb.size,k=0;
+        return list.reduce(function(p,it){
+          return p.then(function(){
+            toast('Préparation des photos '+(++k)+' / '+list.length+'…');
+            return get('full',it.id).then(function(b){
+              if(!b)return;
+              return b.arrayBuffer().then(function(ab){
+                var e={name:it.name+'__'+it.id+'.'+extOf(b),blob:b,crc:crc32(new Uint8Array(ab))};
+                if(cur.length>1&&size+b.size>MAX){parts.push(cur);cur=[];size=0}
+                cur.push(e);size+=b.size;
+              });
+            });
+          });
+        },Promise.resolve()).then(function(){
+          parts.push(cur);toast('');
+          var d=new Date(),ds=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+          try{localStorage.setItem('ag-lastbk',String(Date.now()))}catch(e){}
+          parts.forEach(function(en,i){
+            setTimeout(function(){
+              toast('Téléchargement '+(i+1)+' / '+parts.length+'…');
+              saveBlob(zipBlob(en),'agenda-sauvegarde-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip');
+              if(i===parts.length-1)setTimeout(function(){
+                toast('');
+                alert('Sauvegarde terminée : '+parts.length+' fichier(s) zip'+(list.length?' ('+list.length+' photos originales)':'')+'. Garde tous ces fichiers ensemble en lieu sûr (Google Drive, ordinateur).');
+                try{bkMsg='✓ Sauvegarde téléchargée.';ovUI();render()}catch(e){}
+              },1500);
+            },i*2500);
           });
         });
       });
-    },Promise.resolve()).then(function(){
-      if(cur.length)parts.push(cur);
-      toast('');
-      if(!parts.length){if(!quiet)alert('Aucune photo originale trouvée.');return}
-      var d=new Date(),ds=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
-      parts.forEach(function(en,i){
-        setTimeout(function(){
-          toast('Téléchargement partie '+(i+1)+' / '+parts.length+'…');
-          saveBlob(zipBlob(en),'agenda-photos-originales-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip');
-          if(i===parts.length-1)setTimeout(function(){toast('');alert((quiet?'Sauvegarde + ':'')+list.length+' photos exportées en '+parts.length+' fichier(s) zip. Garde tous ces fichiers ensemble en lieu sûr (Google Drive, ordinateur).')},1500);
-        },i*2500);
-      });
-    }).catch(function(){toast('');alert('Impossible de préparer les photos.')});
+    }).catch(function(){toast('');alert('Impossible de préparer la sauvegarde.')});
   };
   function readZip(file){
     var n=Math.min(file.size,65557),tail=file.slice(file.size-n);
@@ -358,6 +384,7 @@
           return ents.reduce(function(q,e){
             return q.then(function(){
               toast('Restauration des photos… '+(ok+skip+1));
+              if(e.name==='sauvegarde.json')return;
               var id=e.method===0?targetRef(e.name):null;
               if(!id){skip++;return}
               return f.slice(e.off,e.off+30).arrayBuffer().then(function(h){
@@ -373,26 +400,39 @@
   }
 
   /* ---------- un seul bouton pour tout exporter, un seul pour tout restaurer ---------- */
-  window.agExportAll=function(){
-    window.bkExport(function(){window.phExport(0,true)});
-  };
+  function zipText(f,e){
+    return f.slice(e.off,e.off+30).arrayBuffer().then(function(h){
+      var hv=new DataView(h),st=e.off+30+hv.getUint16(26,true)+hv.getUint16(28,true);
+      return f.slice(st,st+e.size).text();
+    });
+  }
   window.agRestoreAll=function(inp){
     var files=[].slice.call(inp.files||[]);if(!files.length)return;
     var js=files.filter(function(f){return /\.json$/i.test(f.name)||f.type==='application/json'});
     var zs=files.filter(function(f){return /\.zip$/i.test(f.name)||/zip/i.test(f.type)});
-    if(!js.length&&!zs.length){alert('Choisis le fichier de sauvegarde (.json) et les fichiers photos (.zip).');return}
+    if(!js.length&&!zs.length){alert('Choisis les fichiers zip de ta sauvegarde (tous en même temps).');return}
     function stop(msg){toast('');if(msg)alert(msg)}
-    var head=js.length?js[0].text().then(function(t){
-      var o;try{o=JSON.parse(t)}catch(e){o=null}
+    toast('Lecture des fichiers…');
+    /* 1) chercher la sauvegarde : dans un zip (sauvegarde.json) ou dans un ancien fichier .json */
+    var find=zs.reduce(function(p,f){
+      return p.then(function(txt){
+        if(txt)return txt;
+        return readZip(f).then(function(ents){
+          var e=ents.filter(function(x){return x.name==='sauvegarde.json'&&x.method===0})[0];
+          return e?zipText(f,e):null;
+        }).catch(function(){return null});
+      });
+    },Promise.resolve(null)).then(function(txt){return txt||(js.length?js[0].text():null)});
+    find.then(function(txt){
+      if(!txt)return true;                       /* pas de sauvegarde : on remet seulement les photos */
+      var o;try{o=JSON.parse(txt)}catch(e){o=null}
       if(!o||o.app!=='agenda'||!o.d){stop('Ce fichier n’est pas une sauvegarde valide.');return false}
-      var n=Object.keys(o.d).length;
-      if(!confirm('Restaurer cette sauvegarde ('+n+' éléments, '+String(o.t||'').slice(0,10)+')'+(zs.length?' et '+zs.length+' fichier(s) de photos':'')+' ? Les données actuelles de l’app seront remplacées.'))return false;
+      if(!confirm('Restaurer cette sauvegarde ('+Object.keys(o.d).length+' éléments, '+String(o.t||'').slice(0,10)+')'+(zs.length?' avec '+zs.length+' fichier(s) zip':'')+' ? Les données actuelles de l’app seront remplacées.'))return false;
       try{Object.keys(o.d).forEach(function(k){if(/^(ag|agw|agd)-/.test(k))localStorage.setItem(k,o.d[k])})}
       catch(e){stop('Espace insuffisant pour restaurer.');return false}
       toast('Restauration…');
       return migrate().then(function(){return true});
-    }):Promise.resolve(true);
-    head.then(function(go){
+    }).then(function(go){
       if(!go)return;
       return importZips(zs).then(function(r){
         toast('');
@@ -412,7 +452,7 @@
     h+='<p class="sm" id="phst">Photos : calcul…</p>';
     h+='<button class="addn" onclick="agExportAll()">Tout exporter</button>';
     h+='<label class="addn alt">Tout restaurer<input type="file" accept=".json,.zip,application/json,application/zip" multiple hidden onchange="agRestoreAll(this)"></label>';
-    h+='<p class="sub lft">« Tout exporter » télécharge ta sauvegarde et tes photos originales (en plusieurs fichiers zip). Garde tous ces fichiers ensemble dans Google Drive ou sur un ordinateur. Pour tout remettre : « Tout restaurer », puis choisis tous ces fichiers en même temps.</p>';
+    h+='<p class="sub lft">« Tout exporter » télécharge ta sauvegarde et tes photos originales dans un ou plusieurs fichiers zip. Garde tous ces fichiers ensemble dans Google Drive ou sur un ordinateur. Pour tout remettre : « Tout restaurer », puis choisis tous ces fichiers zip en même temps.</p>';
     h+='<p class="bkm">'+esc(bkMsg)+'</p>';
     setTimeout(paint,40);setTimeout(paint,400);
     return h+'</div></div>';

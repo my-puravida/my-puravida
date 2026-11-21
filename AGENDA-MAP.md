@@ -36,14 +36,14 @@ Attach this file to every modification request. Claude tells me which files to s
 | 6 | `app-day2.js` | Day page icons, photo viewer, 30 min timer, mood, power and water outages, notes sharing |
 | 7 | `app-extras.js` | Photo viewer with zoom, Vision board per year, tides 2027, live Bitcoin, backup reminder, moods and review, week strip, fireworks, voice and lock in notes |
 | 8 | `app-vault.js` | Secret vault (6-digit code, AES encryption), Aqua activity, outages in statistics, final `render()` call |
-| 9 | `app-photos.js` | **Photo storage in IndexedDB** (full-size original + preview), migration of old photos, storage counter, export/import of the original photos as zip files (`phExport`, `phImport`). Redefines `dph`, `vbAdd`, `dpd`, `vbDel`, `bkExport`, `bkRestore`, `bkHTML` (adds the photo buttons in the Backup screen). Must stay last |
+| 9 | `app-photos.js` | **Photo storage in IndexedDB** (full-size original + preview), migration of old photos, storage counter, export/import of the original photos as zip files (`phExport`, `agExportAll`, `agRestoreAll`). Redefines `dph`, `vbAdd`, `dpd`, `vbDel`, `bkExport`, `bkHTML` (the Backup screen now has only two buttons: "Tout exporter" and "Tout restaurer"). Must stay last |
 
 Notes:
 - The app was built in layers: many functions are defined several times and the **last definition wins**. When changing a behavior, check later files too.
 - `app-vault.js` runs the first `render()`; `app-photos.js` is loaded after it and must stay the last script.
 - **Photos:** in the saved data (localStorage) a photo is only a reference `idb:<id>`. The image files live in IndexedDB (database `agenda-photos`, stores `full` and `thumb`). `<img src="idb:...">` is turned into a real image automatically by `app-photos.js`. Never store photos as base64 text in localStorage.
 - The normal backup file contains photos as preview-size copies (not the originals). Restoring a backup converts them back into IndexedDB photos.
-- Originals: the Backup screen has "Exporter mes photos originales" (zip files, several parts of about 250 MB, names like `jour/2026-11-20_1__id.jpg` and `vision/ag-vb_1__id.jpg`) and "Restaurer mes photos originales". To restore on a new phone: restore the normal backup first, then pick the zip files. Photos are matched by day/position, not by id.
+- Backup screen = 2 buttons. **"Tout exporter"** downloads the normal backup (`.json`, photos as previews) plus all original photos as zip parts of about 250 MB (names like `jour/2026-11-20_1__id.jpg`, `vision/ag-vb_1__id.jpg`). **"Tout restaurer"**: the user picks the `.json` and all the `.zip` files at once; the app restores the data first, then puts the originals back (matched by day and position, not by id), then reloads. The old buttons (export, restore, restore originals) were removed.
 
 ## Screen -> files to ask for
 
@@ -109,3 +109,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 3: added the screen -> files table.
 - Step 4: photos moved to IndexedDB (`app-photos.js`), originals kept at full quality, old photos migrated automatically, storage counter in the Backup screen; `sw.js` at v26.
 - Step 5: export/import of original photos (zip parts); `sw.js` at v27.
+- Step 6: Backup screen simplified to two buttons ("Tout exporter" / "Tout restaurer"); `sw.js` at v28.

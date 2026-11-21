@@ -1,5 +1,5 @@
 /* Photos : stockage IndexedDB (original + aperçu), migration, sauvegarde, compteur.
-   Chargé en dernier : redéfinit dph, vbAdd, dpd, vbDel, bkExport, bkRestore, bkHTML.
+   Chargé en dernier : redéfinit dph, vbAdd, dpd, vbDel, bkExport, bkHTML (écran Sauvegarde : 2 boutons).
    Dans les données (localStorage) une photo n'est plus qu'une référence "idb:<id>". */
 (function(){
   'use strict';
@@ -204,7 +204,7 @@
 
   /* ---------- sauvegarde : les photos sont incluses en taille aperçu ---------- */
   var _bx=window.bkExport;
-  window.bkExport=function(){
+  window.bkExport=function(cb){
     var ids={};
     try{for(var i=0;i<localStorage.length;i++){
       var k=localStorage.key(i);
@@ -220,10 +220,9 @@
         return(typeof v==='string'&&v.indexOf('idb:')>=0)?v.replace(/idb:[a-z0-9]+/g,function(m){return map[m]||m}):v;
       };
       try{_bx()}finally{Storage.prototype.getItem=gi}
+      if(typeof cb==='function')cb();
     });
   };
-  var _br=window.bkRestore;
-  window.bkRestore=function(){_br();migrateAndReload()};
 
   /* ---------- compteur d'espace ---------- */
   function fmt(b){
@@ -248,14 +247,6 @@
       });
     }).catch(function(){});
   }
-  var _bh=window.bkHTML;
-  window.bkHTML=function(){
-    var h=_bh();
-    h=h.replace('<button class="addn" onclick="bkExport()">','<p class="sm" id="phst">Photos : calcul…</p><p class="sub lft">La sauvegarde normale contient les photos en version aperçu. Pour garder les originaux, exporte-les en fichiers zip (garde-les dans Google Drive ou sur un ordinateur). Pour les remettre : restaure d’abord la sauvegarde normale, puis choisis les fichiers zip.</p><button class="addn alt" onclick="phExport()">Exporter mes photos originales</button><label class="addn alt">Restaurer mes photos originales<input type="file" accept=".zip,application/zip" multiple hidden onchange="phImport(this)"></label><button class="addn" onclick="bkExport()">');
-    setTimeout(paint,40);setTimeout(paint,400);
-    return h;
-  };
-
   /* ---------- photos originales : export / import en fichiers zip (sans compression) ---------- */
   var CRCT=null;
   function crc32(u8){
@@ -300,9 +291,9 @@
     a.href=u;a.download=fn;document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(u);a.remove()},120000);
   }
-  window.phExport=function(maxBytes){
+  window.phExport=function(maxBytes,quiet){
     var list=listPhotos(),MAX=(typeof maxBytes==='number'&&maxBytes>0)?maxBytes:250*1048576;
-    if(!list.length){alert('Aucune photo à exporter.');return}
+    if(!list.length){if(!quiet)alert('Aucune photo à exporter.');return}
     var parts=[],cur=[],size=0,k=0;
     list.reduce(function(p,it){
       return p.then(function(){
@@ -319,13 +310,13 @@
     },Promise.resolve()).then(function(){
       if(cur.length)parts.push(cur);
       toast('');
-      if(!parts.length){alert('Aucune photo originale trouvée.');return}
+      if(!parts.length){if(!quiet)alert('Aucune photo originale trouvée.');return}
       var d=new Date(),ds=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
       parts.forEach(function(en,i){
         setTimeout(function(){
           toast('Téléchargement partie '+(i+1)+' / '+parts.length+'…');
           saveBlob(zipBlob(en),'agenda-photos-originales-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip');
-          if(i===parts.length-1)setTimeout(function(){toast('');alert(list.length+' photos exportées en '+parts.length+' fichier(s) zip. Garde-les en lieu sûr (Google Drive, ordinateur).')},1500);
+          if(i===parts.length-1)setTimeout(function(){toast('');alert((quiet?'Sauvegarde + ':'')+list.length+' photos exportées en '+parts.length+' fichier(s) zip. Garde tous ces fichiers ensemble en lieu sûr (Google Drive, ordinateur).')},1500);
         },i*2500);
       });
     }).catch(function(){toast('');alert('Impossible de préparer les photos.')});
@@ -359,15 +350,14 @@
     var r=o.p[idx];if(r&&typeof r==='object')r=r.s;
     return(typeof r==='string'&&r.indexOf('idb:')===0)?r.slice(4):null;
   }
-  window.phImport=function(inp){
-    var files=[].slice.call(inp.files||[]);if(!files.length)return;
+  function importZips(files){
     var ok=0,skip=0;
-    files.reduce(function(p,f){
+    return files.reduce(function(p,f){
       return p.then(function(){
         return readZip(f).then(function(ents){
           return ents.reduce(function(q,e){
             return q.then(function(){
-              toast('Restauration… '+(ok+skip+1));
+              toast('Restauration des photos… '+(ok+skip+1));
               var id=e.method===0?targetRef(e.name):null;
               if(!id){skip++;return}
               return f.slice(e.off,e.off+30).arrayBuffer().then(function(h){
@@ -379,11 +369,53 @@
           },Promise.resolve());
         }).catch(function(){skip++});
       });
-    },Promise.resolve()).then(function(){
-      toast('');freeFull();
-      alert(ok+' photo(s) originale(s) restaurée(s)'+(skip?' ('+skip+' ignorée(s))':'')+'.');
-      paint();render();
-    });
+    },Promise.resolve()).then(function(){return {ok:ok,skip:skip}});
+  }
+
+  /* ---------- un seul bouton pour tout exporter, un seul pour tout restaurer ---------- */
+  window.agExportAll=function(){
+    window.bkExport(function(){window.phExport(0,true)});
+  };
+  window.agRestoreAll=function(inp){
+    var files=[].slice.call(inp.files||[]);if(!files.length)return;
+    var js=files.filter(function(f){return /\.json$/i.test(f.name)||f.type==='application/json'});
+    var zs=files.filter(function(f){return /\.zip$/i.test(f.name)||/zip/i.test(f.type)});
+    if(!js.length&&!zs.length){alert('Choisis le fichier de sauvegarde (.json) et les fichiers photos (.zip).');return}
+    function stop(msg){toast('');if(msg)alert(msg)}
+    var head=js.length?js[0].text().then(function(t){
+      var o;try{o=JSON.parse(t)}catch(e){o=null}
+      if(!o||o.app!=='agenda'||!o.d){stop('Ce fichier n’est pas une sauvegarde valide.');return false}
+      var n=Object.keys(o.d).length;
+      if(!confirm('Restaurer cette sauvegarde ('+n+' éléments, '+String(o.t||'').slice(0,10)+')'+(zs.length?' et '+zs.length+' fichier(s) de photos':'')+' ? Les données actuelles de l’app seront remplacées.'))return false;
+      try{Object.keys(o.d).forEach(function(k){if(/^(ag|agw|agd)-/.test(k))localStorage.setItem(k,o.d[k])})}
+      catch(e){stop('Espace insuffisant pour restaurer.');return false}
+      toast('Restauration…');
+      return migrate().then(function(){return true});
+    }):Promise.resolve(true);
+    head.then(function(go){
+      if(!go)return;
+      return importZips(zs).then(function(r){
+        toast('');
+        alert('Restauration terminée'+(zs.length?' : '+r.ok+' photo(s) originale(s) remise(s)'+(r.skip?' ('+r.skip+' ignorée(s))':''):'')+'.');
+        location.reload();
+      });
+    }).catch(function(){stop('La restauration a échoué.')});
+  };
+
+  /* ---------- écran Sauvegarde (remplace l'ancien : 2 boutons seulement) ---------- */
+  window.bkHTML=function(){
+    var c=bkCount(),lb=lastBk();
+    var h='<div class="tmo" onclick="ovClose()"><div class="tmc nc" onclick="event.stopPropagation()"><div class="tmx"><span>Sauvegarde</span><button onclick="ovClose()">✕</button></div>';
+    h+='<p class="sub lft">Tes notes, photos, listes et dates sont gardées dans ce téléphone. Fais une sauvegarde de temps en temps pour ne rien perdre.</p>';
+    h+='<p class="sm">'+c[0]+' éléments · '+Math.round(c[1]/1024)+' Ko</p>';
+    h+='<p class="sub">'+(lb?'Dernière sauvegarde : '+new Date(lb).toLocaleDateString('fr-CA',{day:'numeric',month:'long'}):'Aucune sauvegarde pour le moment.')+'</p>';
+    h+='<p class="sm" id="phst">Photos : calcul…</p>';
+    h+='<button class="addn" onclick="agExportAll()">Tout exporter</button>';
+    h+='<label class="addn alt">Tout restaurer<input type="file" accept=".json,.zip,application/json,application/zip" multiple hidden onchange="agRestoreAll(this)"></label>';
+    h+='<p class="sub lft">« Tout exporter » télécharge ta sauvegarde et tes photos originales (en plusieurs fichiers zip). Garde tous ces fichiers ensemble dans Google Drive ou sur un ordinateur. Pour tout remettre : « Tout restaurer », puis choisis tous ces fichiers en même temps.</p>';
+    h+='<p class="bkm">'+esc(bkMsg)+'</p>';
+    setTimeout(paint,40);setTimeout(paint,400);
+    return h+'</div></div>';
   };
 
   /* ---------- démarrage ---------- */

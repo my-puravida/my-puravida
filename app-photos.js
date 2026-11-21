@@ -251,9 +251,139 @@
   var _bh=window.bkHTML;
   window.bkHTML=function(){
     var h=_bh();
-    h=h.replace('<button class="addn" onclick="bkExport()">','<p class="sm" id="phst">Photos : calcul…</p><p class="sub lft">Les photos originales restent sur le téléphone. La sauvegarde en contient une version aperçu.</p><button class="addn" onclick="bkExport()">');
+    h=h.replace('<button class="addn" onclick="bkExport()">','<p class="sm" id="phst">Photos : calcul…</p><p class="sub lft">La sauvegarde normale contient les photos en version aperçu. Pour garder les originaux, exporte-les en fichiers zip (garde-les dans Google Drive ou sur un ordinateur). Pour les remettre : restaure d’abord la sauvegarde normale, puis choisis les fichiers zip.</p><button class="addn alt" onclick="phExport()">Exporter mes photos originales</button><label class="addn alt">Restaurer mes photos originales<input type="file" accept=".zip,application/zip" multiple hidden onchange="phImport(this)"></label><button class="addn" onclick="bkExport()">');
     setTimeout(paint,40);setTimeout(paint,400);
     return h;
+  };
+
+  /* ---------- photos originales : export / import en fichiers zip (sans compression) ---------- */
+  var CRCT=null;
+  function crc32(u8){
+    if(!CRCT){CRCT=new Uint32Array(256);for(var n=0;n<256;n++){var c=n;for(var k=0;k<8;k++)c=c&1?(0xEDB88320^(c>>>1)):(c>>>1);CRCT[n]=c>>>0}}
+    var c2=0xFFFFFFFF;for(var i=0;i<u8.length;i++)c2=CRCT[(c2^u8[i])&255]^(c2>>>8);
+    return (c2^0xFFFFFFFF)>>>0;
+  }
+  function p2(n){return (n<10?'0':'')+n}
+  function listPhotos(){
+    var out=[];
+    try{for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i),m=/^agd-(\d+)-(\d+)-(\d+)$/.exec(k),o;
+      if(m){
+        o=JSON.parse(localStorage.getItem(k)||'{}');
+        (o.p||[]).forEach(function(r,j){if(typeof r==='string'&&r.indexOf('idb:')===0)out.push({id:r.slice(4),name:'jour/'+m[1]+'-'+p2(+m[2])+'-'+p2(+m[3])+'_'+(j+1)})});
+      }else if(/^ag-vb(-\d{4})?$/.test(k)){
+        o=JSON.parse(localStorage.getItem(k)||'{}');
+        (o.p||[]).forEach(function(p,j){if(p&&typeof p.s==='string'&&p.s.indexOf('idb:')===0)out.push({id:p.s.slice(4),name:'vision/'+k+'_'+(j+1)})});
+      }
+    }}catch(e){}
+    return out;
+  }
+  function extOf(b){var t=(b&&b.type)||'';return t.indexOf('png')>=0?'png':t.indexOf('webp')>=0?'webp':t.indexOf('heic')>=0?'heic':t.indexOf('heif')>=0?'heif':'jpg'}
+  function zipBlob(entries){
+    var parts=[],central=[],off=0,enc=new TextEncoder(),cs=0;
+    entries.forEach(function(e){
+      var nm=enc.encode(e.name),sz=e.blob.size,h=new DataView(new ArrayBuffer(30));
+      h.setUint32(0,0x04034b50,true);h.setUint16(4,20,true);h.setUint16(6,0x0800,true);h.setUint16(12,0x21,true);
+      h.setUint32(14,e.crc,true);h.setUint32(18,sz,true);h.setUint32(22,sz,true);h.setUint16(26,nm.length,true);
+      parts.push(h.buffer,nm,e.blob);
+      var c=new DataView(new ArrayBuffer(46));
+      c.setUint32(0,0x02014b50,true);c.setUint16(4,20,true);c.setUint16(6,20,true);c.setUint16(8,0x0800,true);c.setUint16(14,0x21,true);
+      c.setUint32(16,e.crc,true);c.setUint32(20,sz,true);c.setUint32(24,sz,true);c.setUint16(28,nm.length,true);c.setUint32(42,off,true);
+      central.push(c.buffer,nm);cs+=46+nm.length;off+=30+nm.length+sz;
+    });
+    var end=new DataView(new ArrayBuffer(22));
+    end.setUint32(0,0x06054b50,true);end.setUint16(8,entries.length,true);end.setUint16(10,entries.length,true);end.setUint32(12,cs,true);end.setUint32(16,off,true);
+    return new Blob(parts.concat(central,[end.buffer]),{type:'application/zip'});
+  }
+  function saveBlob(b,fn){
+    var u=URL.createObjectURL(b),a=document.createElement('a');
+    a.href=u;a.download=fn;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(u);a.remove()},120000);
+  }
+  window.phExport=function(maxBytes){
+    var list=listPhotos(),MAX=(typeof maxBytes==='number'&&maxBytes>0)?maxBytes:250*1048576;
+    if(!list.length){alert('Aucune photo à exporter.');return}
+    var parts=[],cur=[],size=0,k=0;
+    list.reduce(function(p,it){
+      return p.then(function(){
+        toast('Préparation des photos '+(++k)+' / '+list.length+'…');
+        return get('full',it.id).then(function(b){
+          if(!b)return;
+          return b.arrayBuffer().then(function(buf){
+            var e={name:it.name+'__'+it.id+'.'+extOf(b),blob:b,crc:crc32(new Uint8Array(buf))};
+            if(cur.length&&size+b.size>MAX){parts.push(cur);cur=[];size=0}
+            cur.push(e);size+=b.size;
+          });
+        });
+      });
+    },Promise.resolve()).then(function(){
+      if(cur.length)parts.push(cur);
+      toast('');
+      if(!parts.length){alert('Aucune photo originale trouvée.');return}
+      var d=new Date(),ds=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
+      parts.forEach(function(en,i){
+        setTimeout(function(){
+          toast('Téléchargement partie '+(i+1)+' / '+parts.length+'…');
+          saveBlob(zipBlob(en),'agenda-photos-originales-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip');
+          if(i===parts.length-1)setTimeout(function(){toast('');alert(list.length+' photos exportées en '+parts.length+' fichier(s) zip. Garde-les en lieu sûr (Google Drive, ordinateur).')},1500);
+        },i*2500);
+      });
+    }).catch(function(){toast('');alert('Impossible de préparer les photos.')});
+  };
+  function readZip(file){
+    var n=Math.min(file.size,65557),tail=file.slice(file.size-n);
+    return tail.arrayBuffer().then(function(ab){
+      var v=new DataView(ab),i=ab.byteLength-22;
+      while(i>=0&&v.getUint32(i,true)!==0x06054b50)i--;
+      if(i<0)throw 0;
+      var cnt=v.getUint16(i+10,true),cdSize=v.getUint32(i+12,true),cdOff=v.getUint32(i+16,true);
+      return file.slice(cdOff,cdOff+cdSize).arrayBuffer().then(function(cb){
+        var cv=new DataView(cb),p=0,out=[],dec=new TextDecoder();
+        for(var j=0;j<cnt&&p+46<=cb.byteLength;j++){
+          var nl=cv.getUint16(p+28,true),el=cv.getUint16(p+30,true),cl=cv.getUint16(p+32,true);
+          out.push({method:cv.getUint16(p+10,true),size:cv.getUint32(p+24,true),off:cv.getUint32(p+42,true),name:dec.decode(new Uint8Array(cb,p+46,nl))});
+          p+=46+nl+el+cl;
+        }
+        return out;
+      });
+    });
+  }
+  function targetRef(name){
+    var m=/^(jour|vision)\/(.+?)_(\d+)(?:__[a-z0-9]+)?\.[a-z0-9]+$/i.exec(name);
+    if(!m)return null;
+    var key,idx=parseInt(m[3],10)-1,o;
+    if(m[1]==='jour'){var d=/^(\d+)-(\d+)-(\d+)$/.exec(m[2]);if(!d)return null;key='agd-'+d[1]+'-'+parseInt(d[2],10)+'-'+parseInt(d[3],10)}
+    else key=m[2];
+    try{o=JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}
+    if(!o||!o.p)return null;
+    var r=o.p[idx];if(r&&typeof r==='object')r=r.s;
+    return(typeof r==='string'&&r.indexOf('idb:')===0)?r.slice(4):null;
+  }
+  window.phImport=function(inp){
+    var files=[].slice.call(inp.files||[]);if(!files.length)return;
+    var ok=0,skip=0;
+    files.reduce(function(p,f){
+      return p.then(function(){
+        return readZip(f).then(function(ents){
+          return ents.reduce(function(q,e){
+            return q.then(function(){
+              toast('Restauration… '+(ok+skip+1));
+              var id=e.method===0?targetRef(e.name):null;
+              if(!id){skip++;return}
+              return f.slice(e.off,e.off+30).arrayBuffer().then(function(h){
+                var hv=new DataView(h),st=e.off+30+hv.getUint16(26,true)+hv.getUint16(28,true),ex=(/\.([a-z0-9]+)$/i.exec(e.name)||[])[1]||'jpg';
+                var t=/png/i.test(ex)?'image/png':/webp/i.test(ex)?'image/webp':/hei/i.test(ex)?'image/heic':'image/jpeg';
+                return put('full',id,f.slice(st,st+e.size,t)).then(function(){ok++});
+              });
+            });
+          },Promise.resolve());
+        }).catch(function(){skip++});
+      });
+    },Promise.resolve()).then(function(){
+      toast('');freeFull();
+      alert(ok+' photo(s) originale(s) restaurée(s)'+(skip?' ('+skip+' ignorée(s))':'')+'.');
+      paint();render();
+    });
   };
 
   /* ---------- démarrage ---------- */

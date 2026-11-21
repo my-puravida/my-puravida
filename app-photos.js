@@ -511,7 +511,7 @@
     h+='<p class="sm" id="phst">Photos : calcul…</p>';
     h+='<button class="addn" onclick="agExportAll()">Tout exporter</button>';
     h+='<label class="addn alt">Tout restaurer<input type="file" multiple hidden onchange="agRestoreAll(this)"></label>';
-    h+='<p class="sub lft">« Tout exporter » télécharge ta sauvegarde et tes photos originales dans un ou plusieurs fichiers zip. Garde tous ces fichiers ensemble dans Google Drive ou sur un ordinateur. Pour tout remettre : « Tout restaurer », puis choisis tous ces fichiers zip en même temps.</p>';
+    h+='<p class="sub lft">« Tout exporter » télécharge ta sauvegarde et tes photos originales dans un ou plusieurs fichiers zip. Garde tous ces fichiers ensemble dans Google Drive ou sur un ordinateur. Pour tout remettre : télécharge d’abord les fichiers depuis Proton Drive sur le téléphone, puis « Tout restaurer » et choisis-les dans Téléchargements (pas directement dans Proton Drive), tous en même temps.</p>';
     h+='<p class="bkm">'+esc(bkMsg)+'</p>';
     setTimeout(paint,40);setTimeout(paint,400);
     return h+'</div></div>';

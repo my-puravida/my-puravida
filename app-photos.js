@@ -321,16 +321,17 @@
       +'<button id="phsh2" style="'+bs+'">Télécharger sur le téléphone</button>'
       +'<button id="phsh3" style="'+bs+';border:0;background:transparent;color:#999">Fermer</button></div>';
     document.body.appendChild(o);
-    document.getElementById('phsh1').onclick=function(){
-      function fail(e){
+    var tries=0,b1=document.getElementById('phsh1');
+    b1.onclick=function(){
+      /* un seul appel, directement dans le toucher (sinon Chrome refuse : "user gesture") */
+      var data=tries===0?{files:files,title:'Sauvegarde agenda'}:{files:files};
+      var p;
+      try{p=navigator.share(data)}catch(e){p=Promise.reject(e)}
+      p.then(function(){o.remove();markBackup()}).catch(function(e){
         if(e&&e.name==='AbortError')return;
-        alert('Le partage n’a pas fonctionné.\nDétail : '+(e&&e.name?e.name:'?')+(e&&e.message?' – '+String(e.message).slice(0,160):'')+'\nUtilise « Télécharger sur le téléphone ».');
-      }
-      function ok(){o.remove();markBackup()}
-      navigator.share({files:files,title:'Sauvegarde agenda'}).then(ok).catch(function(e){
-        if(e&&e.name==='AbortError')return;
-        /* 2e essai : sans titre */
-        navigator.share({files:files}).then(ok).catch(fail);
+        tries++;
+        b1.textContent='Réessayer (mode simple)';
+        alert('Le partage n’a pas fonctionné.\nDétail : '+(e&&e.name?e.name:'?')+(e&&e.message?' – '+String(e.message).slice(0,160):'')+'\nTu peux réessayer, ou utiliser « Télécharger sur le téléphone ».');
       });
     };
     document.getElementById('phsh2').onclick=function(){o.remove();downloadFiles(files,nPhotos)};

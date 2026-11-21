@@ -1,6 +1,6 @@
 /* Service worker - Mon agenda
    Pour publier une mise à jour : change le numéro de VERSION ci-dessous. */
-const VERSION = 'v32';
+const VERSION = 'v33';
 const CACHE = 'agenda-' + VERSION;
 const FONTS = 'agenda-fonts';
 const SHELL = [

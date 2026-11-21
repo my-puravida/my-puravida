@@ -291,6 +291,45 @@
     a.href=u;a.download=fn;document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(u);a.remove()},120000);
   }
+  /* ---------- envoi de la sauvegarde : partager (Proton Drive, Drive, e-mail...) ou télécharger ---------- */
+  function markBackup(){
+    try{localStorage.setItem('ag-lastbk',String(Date.now()))}catch(e){}
+    try{bkMsg='✓ Sauvegarde terminée.';ovUI();render()}catch(e){}
+  }
+  function downloadFiles(files,nPhotos){
+    files.forEach(function(f,i){
+      setTimeout(function(){
+        toast('Téléchargement '+(i+1)+' / '+files.length+'…');
+        saveBlob(f,f.name);
+        if(i===files.length-1)setTimeout(function(){
+          toast('');markBackup();
+          alert('Sauvegarde terminée : '+files.length+' fichier(s) zip'+(nPhotos?' ('+nPhotos+' photos originales)':'')+', dans les téléchargements du téléphone. Garde tous ces fichiers ensemble en lieu sûr (Google Drive, Proton Drive, ordinateur).');
+        },1500);
+      },i*2500);
+    });
+  }
+  function shareDialog(files,nPhotos){
+    var old=document.getElementById('phshare');if(old)old.remove();
+    var tot=files.reduce(function(a,f){return a+f.size},0),o=document.createElement('div');
+    o.id='phshare';
+    o.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:100000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
+    var bs='display:block;width:100%;box-sizing:border-box;margin:10px 0 0;padding:14px;border-radius:26px;border:1.5px dashed #c48f97;background:#fff;color:#895a64;font:600 14px/1.2 sans-serif;letter-spacing:1px;text-transform:uppercase';
+    o.innerHTML='<div style="background:#faf8f6;border-radius:22px;padding:22px;max-width:340px;width:100%;font:15px/1.4 sans-serif;color:#444;text-align:center">'
+      +'<p style="margin:0 0 4px;font-size:18px">Sauvegarde prête</p>'
+      +'<p style="margin:0 0 12px;color:#895a64">'+files.length+' fichier(s) zip · '+fmt(tot)+(nPhotos?' · '+nPhotos+' photos originales':'')+'</p>'
+      +'<button id="phsh1" style="'+bs+';background:#895a64;color:#fff;border-style:solid;border-color:#895a64">Partager (Proton Drive…)</button>'
+      +'<button id="phsh2" style="'+bs+'">Télécharger sur le téléphone</button>'
+      +'<button id="phsh3" style="'+bs+';border:0;background:transparent;color:#999">Fermer</button></div>';
+    document.body.appendChild(o);
+    document.getElementById('phsh1').onclick=function(){
+      navigator.share({files:files,title:'Sauvegarde agenda'}).then(function(){o.remove();markBackup()}).catch(function(e){
+        if(e&&e.name==='AbortError')return;
+        alert('Le partage n’a pas fonctionné (fichiers trop gros ?). Utilise « Télécharger sur le téléphone ».');
+      });
+    };
+    document.getElementById('phsh2').onclick=function(){o.remove();downloadFiles(files,nPhotos)};
+    document.getElementById('phsh3').onclick=function(){o.remove()};
+  }
   function buildBackupJSON(){
     var d={},ids={};
     try{for(var i=0;i<localStorage.length;i++){
@@ -331,18 +370,13 @@
         },Promise.resolve()).then(function(){
           parts.push(cur);toast('');
           var d=new Date(),ds=d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate());
-          try{localStorage.setItem('ag-lastbk',String(Date.now()))}catch(e){}
-          parts.forEach(function(en,i){
-            setTimeout(function(){
-              toast('Téléchargement '+(i+1)+' / '+parts.length+'…');
-              saveBlob(zipBlob(en),'agenda-sauvegarde-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip');
-              if(i===parts.length-1)setTimeout(function(){
-                toast('');
-                alert('Sauvegarde terminée : '+parts.length+' fichier(s) zip'+(list.length?' ('+list.length+' photos originales)':'')+'. Garde tous ces fichiers ensemble en lieu sûr (Google Drive, ordinateur).');
-                try{bkMsg='✓ Sauvegarde téléchargée.';ovUI();render()}catch(e){}
-              },1500);
-            },i*2500);
+          var files=parts.map(function(en,i){
+            return new File([zipBlob(en)],'agenda-sauvegarde-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip',{type:'application/zip'});
           });
+          var canShare=false;
+          try{canShare=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:files}))}catch(e){}
+          if(canShare)shareDialog(files,list.length);
+          else downloadFiles(files,list.length);
         });
       });
     }).catch(function(){toast('');alert('Impossible de préparer la sauvegarde.')});

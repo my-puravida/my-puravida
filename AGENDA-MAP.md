@@ -43,7 +43,7 @@ Notes:
 - `app-vault.js` runs the first `render()`; `app-photos.js` is loaded after it and must stay the last script.
 - **Photos:** in the saved data (localStorage) a photo is only a reference `idb:<id>`. The image files live in IndexedDB (database `agenda-photos`, stores `full` and `thumb`). `<img src="idb:...">` is turned into a real image automatically by `app-photos.js`. Never store photos as base64 text in localStorage.
 - The normal backup file contains photos as preview-size copies (not the originals). Restoring a backup converts them back into IndexedDB photos.
-- Backup screen = 2 buttons. **"Tout exporter"** downloads only zip files, in parts of about 250 MB: the first zip holds `sauvegarde.json` (the data, photos as previews) plus original photos; the other parts hold more original photos (names like `jour/2026-11-20_1__id.jpg`, `vision/ag-vb_1__id.jpg`). **"Tout restaurer"**: the user picks all the zip files at once; the app restores the data from `sauvegarde.json`, then puts the originals back (matched by day and position, not by id), then reloads. Old `.json` backups from earlier versions can still be picked in "Tout restaurer".
+- Backup screen = 2 buttons. **"Tout exporter"** downloads only zip files, in parts of about 250 MB: the first zip holds `sauvegarde.json` (the data, photos as previews) plus original photos; the other parts hold more original photos (names like `jour/2026-11-20_1__id.jpg`, `vision/ag-vb_1__id.jpg`). **"Tout restaurer"**: the user picks all the zip files at once; the app restores the data from `sauvegarde.json`, then puts the originals back (matched by day and position, not by id), then reloads. Old `.json` backups from earlier versions can still be picked in "Tout restaurer". After "Tout exporter" prepares the zip files, a small window offers **Partager** (Android share sheet: Proton Drive, Google Drive, e-mail...) or **Télécharger sur le téléphone**; if the phone has no share support it downloads directly.
 
 ## Screen -> files to ask for
 
@@ -111,3 +111,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 5: export/import of original photos (zip parts); `sw.js` at v27.
 - Step 6: Backup screen simplified to two buttons ("Tout exporter" / "Tout restaurer"); `sw.js` at v28.
 - Step 7: "Tout exporter" now makes only zip files (backup inside the first one); `sw.js` at v29.
+- Step 8: after "Tout exporter", a Share window (Proton Drive...) or download; `sw.js` at v30.

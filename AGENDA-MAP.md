@@ -115,3 +115,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 9: share errors now show the technical detail; `sw.js` at v31.
 - Step 10: `sw.js` v32 installs with `cache: 'reload'` (fixes the phone keeping an old copy of a file after an update).
 - Step 11: share uses `.zip.txt` file names (Chrome blocks .zip), restore recognizes files by content; `sw.js` at v34.
+- Step 12: restore copies photo bytes into memory before storing them (files picked from Proton Drive could not be stored by reference), and shows the error name if a photo is ignored; `sw.js` at v35.

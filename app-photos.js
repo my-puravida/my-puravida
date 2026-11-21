@@ -421,7 +421,8 @@
     return(typeof r==='string'&&r.indexOf('idb:')===0)?r.slice(4):null;
   }
   function importZips(files){
-    var ok=0,skip=0;
+    var ok=0,skip=0,err='';
+    function bad(e){skip++;if(!err)err=(e&&e.name)?e.name:'erreur'}
     return files.reduce(function(p,f){
       return p.then(function(){
         return readZip(f).then(function(ents){
@@ -434,13 +435,16 @@
               return f.slice(e.off,e.off+30).arrayBuffer().then(function(h){
                 var hv=new DataView(h),st=e.off+30+hv.getUint16(26,true)+hv.getUint16(28,true),ex=(/\.([a-z0-9]+)$/i.exec(e.name)||[])[1]||'jpg';
                 var t=/png/i.test(ex)?'image/png':/webp/i.test(ex)?'image/webp':/hei/i.test(ex)?'image/heic':'image/jpeg';
-                return put('full',id,f.slice(st,st+e.size,t)).then(function(){ok++});
-              });
+                /* on copie les octets en mémoire avant de les ranger : un fichier venant de Proton Drive / Drive ne peut pas être gardé "par référence" */
+                return f.slice(st,st+e.size).arrayBuffer().then(function(buf){
+                  return put('full',id,new Blob([buf],{type:t}));
+                }).then(function(){ok++});
+              }).catch(bad);
             });
           },Promise.resolve());
-        }).catch(function(){skip++});
+        }).catch(bad);
       });
-    },Promise.resolve()).then(function(){return {ok:ok,skip:skip}});
+    },Promise.resolve()).then(function(){return {ok:ok,skip:skip,err:err}});
   }
 
   /* ---------- un seul bouton pour tout exporter, un seul pour tout restaurer ---------- */
@@ -491,7 +495,7 @@
       if(!go)return;
       return importZips(zs).then(function(r){
         toast('');
-        alert('Restauration terminée'+(zs.length?' : '+r.ok+' photo(s) originale(s) remise(s)'+(r.skip?' ('+r.skip+' ignorée(s))':''):'')+'.');
+        alert('Restauration terminée'+(zs.length?' : '+r.ok+' photo(s) originale(s) remise(s)'+(r.skip?' ('+r.skip+' ignorée(s)'+(r.err?' : '+r.err:'')+')':''):'')+'.');
         location.reload();
       });
     }).catch(function(){stop('La restauration a échoué.')});

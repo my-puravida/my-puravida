@@ -311,20 +311,23 @@
   function shareDialog(files,nPhotos){
     var old=document.getElementById('phshare');if(old)old.remove();
     var tot=files.reduce(function(a,f){return a+f.size},0),o=document.createElement('div');
+    /* Chrome refuse de partager des .zip ("Permission denied") : on les partage avec .txt à la fin du nom */
+    var sfiles=files.map(function(f){return new File([f],f.name+'.txt',{type:'text/plain'})});
     o.id='phshare';
     o.style.cssText='position:fixed;left:0;top:0;right:0;bottom:0;z-index:100000;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;padding:20px;box-sizing:border-box';
     var bs='display:block;width:100%;box-sizing:border-box;margin:10px 0 0;padding:14px;border-radius:26px;border:1.5px dashed #c48f97;background:#fff;color:#895a64;font:600 14px/1.2 sans-serif;letter-spacing:1px;text-transform:uppercase';
     o.innerHTML='<div style="background:#faf8f6;border-radius:22px;padding:22px;max-width:340px;width:100%;font:15px/1.4 sans-serif;color:#444;text-align:center">'
       +'<p style="margin:0 0 4px;font-size:18px">Sauvegarde prête</p>'
       +'<p style="margin:0 0 12px;color:#895a64">'+files.length+' fichier(s) zip · '+fmt(tot)+(nPhotos?' · '+nPhotos+' photos originales':'')+'</p>'
-      +'<button id="phsh1" style="'+bs+';background:#895a64;color:#fff;border-style:solid;border-color:#895a64">Partager (Proton Drive…)</button>'
+      +'<button id="phsh1" style="'+bs+';background:#895a64;color:#fff;border-style:solid;border-color:#895a64">Partager</button>'
+      +'<p style="margin:12px 0 0;font-size:12px;color:#999">Chrome n’accepte pas le partage de fichiers .zip : ils sont envoyés avec « .txt » à la fin du nom (ex. …partie1-sur-1.zip.txt). Garde-les tels quels, « Tout restaurer » les reconnaît.</p>'
       +'<button id="phsh2" style="'+bs+'">Télécharger sur le téléphone</button>'
       +'<button id="phsh3" style="'+bs+';border:0;background:transparent;color:#999">Fermer</button></div>';
     document.body.appendChild(o);
     var tries=0,b1=document.getElementById('phsh1');
     b1.onclick=function(){
       /* un seul appel, directement dans le toucher (sinon Chrome refuse : "user gesture") */
-      var data=tries===0?{files:files,title:'Sauvegarde agenda'}:{files:files};
+      var data=tries===0?{files:sfiles,title:'Sauvegarde agenda'}:{files:sfiles};
       var p;
       try{p=navigator.share(data)}catch(e){p=Promise.reject(e)}
       p.then(function(){o.remove();markBackup()}).catch(function(e){
@@ -381,7 +384,7 @@
             return new File([zipBlob(en)],'agenda-sauvegarde-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip',{type:'application/zip'});
           });
           var canShare=false;
-          try{canShare=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:files}))}catch(e){}
+          try{canShare=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:files.map(function(f){return new File([f],f.name+'.txt',{type:'text/plain'})})}))}catch(e){}
           if(canShare)shareDialog(files,list.length);
           else downloadFiles(files,list.length);
         });
@@ -449,13 +452,22 @@
   }
   window.agRestoreAll=function(inp){
     var files=[].slice.call(inp.files||[]);if(!files.length)return;
-    var js=files.filter(function(f){return /\.json$/i.test(f.name)||f.type==='application/json'});
-    var zs=files.filter(function(f){return /\.zip$/i.test(f.name)||/zip/i.test(f.type)});
-    if(!js.length&&!zs.length){alert('Choisis les fichiers zip de ta sauvegarde (tous en même temps).');return}
+    var js=[],zs=[],nothing=false;
     function stop(msg){toast('');if(msg)alert(msg)}
     toast('Lecture des fichiers…');
+    var classify=files.reduce(function(p,f){
+      return p.then(function(){
+        return f.slice(0,4).arrayBuffer().then(function(ab){
+          var u=new Uint8Array(ab);
+          if(u[0]===0x50&&u[1]===0x4B)zs.push(f);                      /* PK : zip, même renommé en .zip.txt */
+          else if(u[0]===0x7B||/\.json$/i.test(f.name))js.push(f);     /* { : ancienne sauvegarde json */
+        });
+      });
+    },Promise.resolve());
     /* 1) chercher la sauvegarde : dans un zip (sauvegarde.json) ou dans un ancien fichier .json */
-    var find=zs.reduce(function(p,f){
+    var find=classify.then(function(){
+      if(!js.length&&!zs.length){nothing=true;stop('Aucun fichier de sauvegarde reconnu. Choisis les fichiers zip de ta sauvegarde (tous en même temps).');return null}
+      return zs.reduce(function(p,f){
       return p.then(function(txt){
         if(txt)return txt;
         return readZip(f).then(function(ents){
@@ -464,7 +476,9 @@
         }).catch(function(){return null});
       });
     },Promise.resolve(null)).then(function(txt){return txt||(js.length?js[0].text():null)});
+    });
     find.then(function(txt){
+      if(nothing)return false;
       if(!txt)return true;                       /* pas de sauvegarde : on remet seulement les photos */
       var o;try{o=JSON.parse(txt)}catch(e){o=null}
       if(!o||o.app!=='agenda'||!o.d){stop('Ce fichier n’est pas une sauvegarde valide.');return false}
@@ -492,7 +506,7 @@
     h+='<p class="sub">'+(lb?'Dernière sauvegarde : '+new Date(lb).toLocaleDateString('fr-CA',{day:'numeric',month:'long'}):'Aucune sauvegarde pour le moment.')+'</p>';
     h+='<p class="sm" id="phst">Photos : calcul…</p>';
     h+='<button class="addn" onclick="agExportAll()">Tout exporter</button>';
-    h+='<label class="addn alt">Tout restaurer<input type="file" accept=".json,.zip,application/json,application/zip" multiple hidden onchange="agRestoreAll(this)"></label>';
+    h+='<label class="addn alt">Tout restaurer<input type="file" multiple hidden onchange="agRestoreAll(this)"></label>';
     h+='<p class="sub lft">« Tout exporter » télécharge ta sauvegarde et tes photos originales dans un ou plusieurs fichiers zip. Garde tous ces fichiers ensemble dans Google Drive ou sur un ordinateur. Pour tout remettre : « Tout restaurer », puis choisis tous ces fichiers zip en même temps.</p>';
     h+='<p class="bkm">'+esc(bkMsg)+'</p>';
     setTimeout(paint,40);setTimeout(paint,400);

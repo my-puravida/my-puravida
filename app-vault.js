@@ -436,4 +436,112 @@
   document.head.appendChild(st);
 })();
 
+/* ===== v35 : humeurs Pensive et Nostalgique, nouvelles icones, accueil blanc gris, barre d'outils du bouton + ===== */
+(function(){
+  /* ---------- 1. Humeurs : Pensive et Nostalgique (ajoutees a la fin pour garder les humeurs deja choisies) ---------- */
+  var MF='<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="mfg" cx=".4" cy=".3" r=".9"><stop offset="0" stop-color="#f9f8f6"/><stop offset="1" stop-color="#f3e7e7"/></radialGradient></defs><circle cx="20" cy="20.5" r="17" fill="url(#mfg)" stroke="#39393b" stroke-width="1.5"/><ellipse cx="12" cy="9.5" rx="4" ry="2" fill="#fff" opacity=".7" transform="rotate(-25 12 9.5)"/>';
+  var CHK='<ellipse cx="9.8" cy="24.8" rx="3" ry="1.9" fill="#d9b0b6" opacity=".65"/><ellipse cx="30.2" cy="24.8" rx="3" ry="1.9" fill="#d9b0b6" opacity=".65"/>';
+  var PENS=MF
+    +'<ellipse cx="14" cy="20" rx="3" ry="3.3" fill="#fff" stroke="#39393b" stroke-width="1.2"/><circle cx="15.4" cy="18.7" r="1.4" fill="#39393b"/>'
+    +'<ellipse cx="26" cy="20" rx="3" ry="3.3" fill="#fff" stroke="#39393b" stroke-width="1.2"/><circle cx="27.4" cy="18.7" r="1.4" fill="#39393b"/>'
+    +'<path d="M10.5 15.2l5.5-1.6M24 12.8l5.5 1.7" stroke="#39393b" stroke-width="1.5" stroke-linecap="round"/>'
+    +'<path d="M16.5 27.5c2-.9 4.2-.8 6.5.3" stroke="#39393b" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+    +CHK
+    +'<circle cx="31" cy="10.6" r="1" fill="#d9b0b6" stroke="#c48f97" stroke-width=".6"/><circle cx="33.6" cy="7.4" r="1.6" fill="#d9b0b6" stroke="#c48f97" stroke-width=".6"/><circle cx="36" cy="3.6" r="2.3" fill="#e8ced1" stroke="#c48f97" stroke-width=".6"/></svg>';
+  var NOST=MF
+    +'<path d="M11 19.5c1.6 2.3 4.4 2.3 6 0M23 19.5c1.6 2.3 4.4 2.3 6 0" stroke="#39393b" stroke-width="1.7" fill="none" stroke-linecap="round"/>'
+    +'<path d="M10.6 16l5-1.6M29.4 16l-5-1.6" stroke="#39393b" stroke-width="1.4" stroke-linecap="round"/>'
+    +'<path d="M16.5 26.2c1.8 1.7 5.2 1.7 7 0" stroke="#39393b" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
+    +CHK
+    +'<path d="M14.2 23c1.2 1.5 1.5 2.5 0 3.2-1.5-.7-1.2-1.7 0-3.2z" fill="#b5b3b4" stroke="#929093" stroke-width=".7"/>'
+    +'<g transform="rotate(10 33.5 8.5)"><rect x="29.5" y="3.8" width="8" height="9.4" rx="1" fill="#fff" stroke="#39393b" stroke-width=".8"/><rect x="30.8" y="5.1" width="5.4" height="5.2" fill="#e8ced1"/></g></svg>';
+  [['Pensive',PENS],['Nostalgique',NOST]].forEach(function(o){
+    if(!MOOD5.some(function(m){return m.n===o[0]}))MOOD5.push({n:o[0],s:o[1]});
+  });
+
+  /* ---------- 2. Activites : 9 icones, Etirement avant Espagnol, plus de 30 min ---------- */
+  [ACT,WST,ACTH].forEach(function(arr){for(var i=arr.length-1;i>=0;i--){if(arr[i][0]==='tm')arr.splice(i,1)}});
+  ACTIMG.et='img-act-et.webp';
+  function insBeforeSx(arr,item){
+    if(arr.some(function(a){return a[0]==='et'}))return;
+    var i=arr.length;for(var k=0;k<arr.length;k++){if(arr[k][0]==='sx'){i=k;break}}
+    arr.splice(i,0,item);
+  }
+  var etTag='<img class="pkm aci" src="'+ACTIMG.et+'" alt="">';
+  insBeforeSx(ACT,['et',etTag,'\u00c9tirement']);
+  insBeforeSx(WST,['et',etTag,'\u00c9tirement']);
+  insBeforeSx(ACTH,['et','IMG:et','\u00c9tirement']);
+  var _aiE=actIcon;
+  actIcon=function(a){
+    if(a&&a[1]==='IMG:et')return '<img class="pl2" src="'+ACTIMG.et+'" alt="\u00c9tirement">';
+    return _aiE(a);
+  };
+
+  /* ---------- 3. Plage : meme image sur la page du jour ---------- */
+  WVSCENE='<img src="img-plage.webp" alt="">';
+  WVBLUE=WVSCENE;
+
+  /* ---------- 4. Accueil : meteo, puis Plage et Singes dessous ---------- */
+  wxHero=function(t){
+    var y=t.getFullYear(),m=t.getMonth(),d=t.getDate(),a=wxGet(y,m,d),b=isBeach(y,m,d),nm=bcName(y,m,d),mk=mkOn(y,m,d);
+    var LB=['Matin','Apr\u00e8m','Soir','Nuit'];
+    var r1=a.map(function(v,i){
+      return '<button class="hxi" aria-label="Le temps : '+WXS[i]+'" onclick="wxOpen('+y+','+m+','+d+','+i+')"><span class="hxc'+(v<0?' e':'')+'">'+(v>=0?'<img src="'+WXI[v]+'" alt="'+WXL[v]+'">':'')+'</span><small>'+LB[i]+'</small></button>';
+    }).join('');
+    var r2='<button class="hxi hxo'+(b?' on':'')+'" aria-label="Jour de plage" aria-pressed="'+(b?'true':'false')+'" onclick="bcOpen('+y+','+m+','+d+')"><span class="hxc"><img src="img-plage.webp" alt=""></span><small>'+(b&&nm?esc(bcShort(nm)):'Plage')+'</small></button>'
+      +'<button class="hxi hxo'+(mk?' on':'')+'" aria-label="On a vu les singes" aria-pressed="'+(mk?'true':'false')+'" onclick="mkTog('+y+','+m+','+d+')"><span class="hxc"><img src="img-singe.webp" alt=""></span><small>Singes</small></button>';
+    return '<div class="hxw hxn"><div class="hxr hx4">'+r1+'</div><div class="hxr hx2">'+r2+'</div></div>';
+  };
+
+  /* ---------- 5. Bouton + : barre verticale d'icones ---------- */
+  var TB=[['Notes','notes',"ovOpen('note')"],['\u00c9picerie','panier',"goHomeShop()"],['Calculatrice','calc',"ovOpen('calc')"],['Devises','devises',"ovOpen('fx')"],['Bitcoin','bitcoin',"ovOpen('btc')"],['Mar\u00e9es','marees',"ovOpen('tide')"],['Pleines lunes','lune',"ovOpen('moon')"],['Minuteur','sablier',"tmOpen()"],['Statistiques','stats',"ovOpen('ystat')"],['Recherche','loupe',"ovOpen('search')"]];
+  var plusFor2=-1;
+  togPlus=function(){plusOpen=!plusOpen;plusFor2=cur;render()};
+  function pbar(){
+    if(!(plusOpen&&plusFor2===cur))return '';
+    return '<div class="pbk" onclick="plusOpen=false;render()"></div><div class="pbar">'+TB.map(function(x){
+      return '<button class="pbi" aria-label="'+x[0]+'" onclick="plusOpen=false;render();'+x[2]+'"><img src="img-tb-'+x[1]+'.webp" alt=""></button>';
+    }).join('')+'</div>';
+  }
+  cartBtn=function(){return '<button class="pbtn" aria-label="Plus" onclick="togPlus()">'+PLUSSVG+'</button>'+pbar()};
+  var _hpN=homePage;
+  homePage=function(){
+    var h=_hpN();
+    h=h.replace(/<div class="pbk"[^>]*><\/div><div class="pmenu p4">[\s\S]*?<\/div>/,'');
+    return h.replace('<div class="hwrap">','<div class="hwrap">'+pbar());
+  };
+
+  /* ---------- 6. Styles ---------- */
+  var st=document.createElement('style');
+  st.textContent=':root{--acs:min(15.6vw,84px);--hxs:min(15vw,78px)}'
+   /* activites */
+   +'.actc{width:var(--acs);height:var(--acs);font-size:0}'
+   +'.actb{width:calc(var(--acs) + 4px);gap:5px}'
+   +'.actb em{font-size:8.5px;letter-spacing:.03em;white-space:nowrap}'
+   +'.actr{gap:0;margin:10px 0}'
+   /* meteo + plage + singes dans la carte */
+   +'.hxn{margin-top:14px;padding-top:16px;border-top:1px solid rgba(57,57,59,.22)}'
+   +'.hxn .hxr{display:flex;justify-content:center;align-items:flex-start;gap:calc(var(--hxs)*.2)}'
+   +'.hxn .hx2{margin-top:16px}'
+   +'.hxi{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:7px;font:inherit;color:#707072;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+   +'.hxc{display:block;width:var(--hxs);height:var(--hxs);border-radius:50%;filter:drop-shadow(0 6px 7px rgba(57,57,59,.32))}'
+   +'.hxc img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}'
+   +'.hxc.e{box-sizing:border-box;border:1.6px dashed rgba(57,57,59,.3);background:rgba(255,255,255,.45);filter:none}'
+   +'.hxi small{font-size:9px;letter-spacing:.14em;text-transform:uppercase;white-space:nowrap}'
+   +'.hxo .hxc{opacity:.5;filter:grayscale(.5) drop-shadow(0 4px 5px rgba(57,57,59,.18))}'
+   +'.hxo.on .hxc{opacity:1;filter:drop-shadow(0 6px 7px rgba(57,57,59,.32))}'
+   +'.hxo.on small{color:#39393b;font-weight:600}'
+   /* plage sur la page du jour */
+   +'.d3c img,.ds-bw img{display:block;width:100%;height:100%;object-fit:cover}'
+   +'.d3c.off img,.ds-bw.off img{filter:saturate(.25);opacity:.55}'
+   /* barre verticale du bouton + */
+   +'.pbk{background:rgba(57,57,59,.3)}'
+   +'.pbar{position:absolute;top:64px;right:8px;z-index:8;display:flex;flex-direction:column;align-items:center;gap:6px;padding:16px 14px;border-radius:44px;background:#faf9f7;border:1px solid #c9b196;box-shadow:0 22px 34px -12px rgba(30,30,32,.55);max-height:calc(100vh - 110px);overflow-y:auto;--bi:min(14.5vw,calc((100vh - 250px)/10.7),72px)}'
+   +'.hwrap .pbar{top:90px}'
+   +'.pbi{flex:0 0 auto;width:var(--bi);height:var(--bi);border:0;padding:0;background:none;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+   +'.pbi img{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 5px 8px -4px rgba(57,57,59,.5)}'
+   +'.pbi:active{transform:scale(.94)}';
+  document.head.appendChild(st);
+})();
+
 render();

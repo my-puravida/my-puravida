@@ -68,7 +68,7 @@ For a **purely visual change** (colors, sizes, spacing, fonts) ask for `style.cs
 | Exchange rates | `app-core2.js` | - |
 | Backup / restore | `app-core2.js` | `app-extras.js` (reminder) |
 | Search | `app-core2.js` | `app-day.js` (universal search) |
-| Top-right menu | `app-day.js` | `app-week-home.js` |
+| + button and its vertical icon bar | `app-vault.js` (v35 block at the end) | `app-day.js` (old menu, no longer shown), `style-late.css` |
 | Weather of the day | `app-day.js` | `app-icons.js` |
 | Activity icons / exercises | `app-core2.js`, `app-icons.js` | `app-week-home.js` (walking), `app-day2.js` (30 min), `app-vault.js` (Aqua), `app-extras.js` (fireworks) |
 | Chores | `app-core2.js` | - |
@@ -87,8 +87,10 @@ For a **purely visual change** (colors, sizes, spacing, fonts) ask for `style.cs
 | `img-header.webp` | Top banner |
 | `img-hero.webp` | Home page hero background |
 | `img-bl.webp` | Bucket list button |
-| `img-wx0` to `img-wx6.webp` | Weather icons |
-| `img-act-fx / px / tp / yx / mx / sx / wx / tm / aq.webp` | Activity icons (workout, plank, trampoline, yoga, meditation, ...) |
+| `img-wx0` to `img-wx6.webp` | Weather icons (0 sun, 1 sun and cloud, 2 cloud, 3 sun and rain, 4 rain, 5 storm, 6 moon) |
+| `img-act-fx / yx / px / tp / aq / wx / mx / et / sx.webp` | Activity icons (workout, yoga, plank, trampoline, aqua, walk, meditation, stretching, Spanish). `img-act-tm.webp` is no longer used (30 min removed) |
+| `img-plage.webp`, `img-singe.webp` | Beach and monkeys icons (home card, beach also on the day page) |
+| `img-tb-*.webp` | Icons of the vertical bar opened by the + button (notes, panier, calc, devises, bitcoin, marees, lune, sablier, stats, loupe) |
 | `img-plank.webp`, `img-tramp.webp` | Plank and trampoline icons |
 | `img-dt-cat / family / other / arr / dep.webp` | Important-date icons |
 | `img-crystal.webp` | Crystals icon |
@@ -103,3 +105,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 2: CSS and JS split into `style.css`, `style-late.css` and `app-*.js`; `sw.js` at v25.
 - Step 3: added the screen -> files table.
 - Step 4: secret vault now opens only by a long press on the big day number of the home page. Removed the other accesses: Pura Vida/Espagnol icon long press, calculator code + "=", crossed-out post-it in notes, "Jardin secret" lock on the day page. `app-vault.js` edited, `sw.js` at v34.
+- Step 5: v35. Moods Pensive and Nostalgique; 9 new activity icons (Etirement before Espagnol, 30 min removed); new weather icons; Plage and Singes icons under the weather in the home card; home page in blanc gris with a charcoal gradient (`style-late.css`); the tools open from a vertical icon bar behind the + button. All new code is in a block at the end of `app-vault.js`. New images added, `sw.js` at v35.

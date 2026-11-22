@@ -1,6 +1,6 @@
 /* Service worker - Mon agenda
    Pour publier une mise à jour : change le numéro de VERSION ci-dessous. */
-const VERSION = 'v34';
+const VERSION = 'v35';
 const CACHE = 'agenda-' + VERSION;
 const FONTS = 'agenda-fonts';
 const SHELL = [
@@ -23,6 +23,7 @@ const SHELL = [
   './app-vault.js',
   './app-photos.js',
   './img-act-aq.webp',
+  './img-act-et.webp',
   './img-act-fx.webp',
   './img-act-mx.webp',
   './img-act-px.webp',
@@ -42,7 +43,19 @@ const SHELL = [
   './img-header.webp',
   './img-hero.webp',
   './img-mk.png',
+  './img-plage.webp',
   './img-plank.webp',
+  './img-singe.webp',
+  './img-tb-bitcoin.webp',
+  './img-tb-calc.webp',
+  './img-tb-devises.webp',
+  './img-tb-loupe.webp',
+  './img-tb-lune.webp',
+  './img-tb-marees.webp',
+  './img-tb-notes.webp',
+  './img-tb-panier.webp',
+  './img-tb-sablier.webp',
+  './img-tb-stats.webp',
   './img-tramp.webp',
   './img-wa.webp',
   './img-wx0.webp',

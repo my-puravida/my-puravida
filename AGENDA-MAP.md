@@ -19,7 +19,7 @@ Attach this file to every modification request. Claude tells me which files to s
 | `index.html` | Page skeleton only (about 2 KB). Links to the CSS and JS files below. |
 | `style.css` | Main design (loaded in the head). |
 | `style-late.css` | Final overrides (loaded at the end of the body, so it wins over the rest). Keep it last. |
-| `sw.js` | Service worker (offline mode). Has the file list `SHELL` and the `VERSION` number. |
+| `sw.js` | Service worker (offline mode). Has the file list `SHELL` and the `VERSION` number. Since v36 the install is tolerant: a missing image or icon (`.webp` / `.png`) no longer blocks the update; a missing page, CSS, JS or manifest still does. |
 | `manifest.webmanifest` | App name, colors, icons. |
 | `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` | App icons. |
 | `img-*.webp` / `img-mk.png` | Images (see below). |
@@ -106,3 +106,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 3: added the screen -> files table.
 - Step 4: secret vault now opens only by a long press on the big day number of the home page. Removed the other accesses: Pura Vida/Espagnol icon long press, calculator code + "=", crossed-out post-it in notes, "Jardin secret" lock on the day page. `app-vault.js` edited, `sw.js` at v34.
 - Step 5: v35. Moods Pensive and Nostalgique; 9 new activity icons (Etirement before Espagnol, 30 min removed); new weather icons; Plage and Singes icons under the weather in the home card; home page in blanc gris with a charcoal gradient (`style-late.css`); the tools open from a vertical icon bar behind the + button. All new code is in a block at the end of `app-vault.js`. New images added, `sw.js` at v35.
+- Step 6: v36. `sw.js` made tolerant: a missing image or icon no longer blocks the install of an update (page, CSS, JS and manifest are still required). Cause found: the 13 new v35 images were not uploaded to GitHub, so v35 never installed. Only `sw.js` changed.

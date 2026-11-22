@@ -1,6 +1,6 @@
 /* Service worker - Mon agenda
    Pour publier une mise à jour : change le numéro de VERSION ci-dessous. */
-const VERSION = 'v35';
+const VERSION = 'v36';
 const CACHE = 'agenda-' + VERSION;
 const FONTS = 'agenda-fonts';
 const SHELL = [
@@ -67,8 +67,31 @@ const SHELL = [
   './img-wx6.webp'
 ];
 
+/* Indispensables : page, styles, scripts, manifest. Si l'un manque, la mise à jour est refusée.
+   Les images et icônes sont facultatives : une image absente ne bloque plus l'installation. */
+function isCore(u) {
+  return !/\.(webp|png)$/.test(u);
+}
+
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then((cache) =>
+      Promise.all(SHELL.map((u) =>
+        fetch(new Request(u, { cache: 'reload' }))
+          .then((res) => {
+            if (!res.ok) throw new Error(u + ' ' + res.status);
+            return cache.put(u, res);
+          })
+          .then(() => null)
+          .catch((err) => ({ u: u, err: err }))
+      )).then((results) => {
+        const failed = results.filter(Boolean);
+        const core = failed.filter((f) => isCore(f.u));
+        if (core.length) throw new Error('Fichiers indispensables manquants : ' + core.map((f) => f.u).join(', '));
+        if (failed.length) console.warn('Images manquantes (ignorées) :', failed.map((f) => f.u).join(', '));
+      })
+    ).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (e) => {

@@ -202,6 +202,29 @@
     migrate().then(function(c){if(c>0)location.reload()});
   }
 
+  /* ---------- restauration : photos rangées dans IndexedDB AVANT d'écrire dans localStorage ---------- */
+  function toRefs(v){
+    if(!v||v.indexOf('data:image/')<0)return Promise.resolve(v);
+    var toks=v.match(RE)||[],ids=[];
+    return toks.reduce(function(q,t){
+      return q.then(function(){
+        var b=d2b(t),id=newId();
+        return put('full',id,b).then(function(){return put('thumb',id,b)}).then(function(){ids.push('idb:'+id)});
+      });
+    },Promise.resolve()).then(function(){
+      var n=0;return v.replace(RE,function(){return ids[n++]});
+    });
+  }
+  function writeKeys(d){
+    var ks=Object.keys(d).filter(function(k){return /^(ag|agw|agd)-/.test(k)}),i=0;
+    return ks.reduce(function(p,k){
+      return p.then(function(){
+        toast('Restauration… '+(++i)+' / '+ks.length);
+        return toRefs(d[k]).then(function(v){localStorage.setItem(k,v)});
+      });
+    },Promise.resolve());
+  }
+
   /* ---------- sauvegarde : les photos sont incluses en taille aperçu ---------- */
   var _bx=window.bkExport;
   window.bkExport=function(cb){
@@ -487,10 +510,9 @@
       var o;try{o=JSON.parse(txt)}catch(e){o=null}
       if(!o||o.app!=='agenda'||!o.d){stop('Ce fichier n’est pas une sauvegarde valide.');return false}
       if(!confirm('Restaurer cette sauvegarde ('+Object.keys(o.d).length+' éléments, '+String(o.t||'').slice(0,10)+')'+(zs.length?' avec '+zs.length+' fichier(s) zip':'')+' ? Les données actuelles de l’app seront remplacées.'))return false;
-      try{Object.keys(o.d).forEach(function(k){if(/^(ag|agw|agd)-/.test(k))localStorage.setItem(k,o.d[k])})}
-      catch(e){stop('Espace insuffisant pour restaurer.');return false}
       toast('Restauration…');
-      return migrate().then(function(){return true});
+      /* chaque clé est écrite une par une : ses photos vont d'abord dans IndexedDB, puis seule la référence entre dans localStorage (sinon un fichier de 15 Mo dépasse la limite de ~5 Mo) */
+      return writeKeys(o.d).then(function(){return true},function(){stop('Espace insuffisant pour restaurer.');return false});
     }).then(function(go){
       if(!go)return;
       return importZips(zs).then(function(r){

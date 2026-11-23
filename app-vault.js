@@ -544,4 +544,33 @@
   document.head.appendChild(st);
 })();
 
+/* ===== v38 : les humeurs utilisent les images img-mood-xx.webp (les autres gardent leur dessin) ===== */
+(function(){
+  /* nom de l'humeur -> code du fichier img-mood-<code>.webp */
+  var MI={'Rayonnante':'ra','Heureuse':'he','Calme':'ca','Fatigu\u00e9e':'fa','Anxieuse':'an','Spirituelle':'sp','Motiv\u00e9e':'mo','Pensive':'pe','Nostalgique':'no'};
+  function wrap(src){return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><image href="'+src+'" width="40" height="40" preserveAspectRatio="xMidYMid meet"/></svg>'}
+  MOOD5.forEach(function(m){
+    var c=MI[m.n];if(!c)return;
+    m.i='img-mood-'+c+'.webp';
+    m.s=wrap(m.i);
+  });
+  /* partage du bilan en image : le canvas ne peut pas charger un fichier externe dans un SVG, on le met en base64 le temps du dessin */
+  var cache={};
+  function dataURL(src){
+    if(cache[src])return Promise.resolve(cache[src]);
+    return fetch(src).then(function(r){return r.blob()}).then(function(b){
+      return new Promise(function(res){var f=new FileReader();f.onload=function(){cache[src]=f.result;res(f.result)};f.onerror=function(){res(null)};f.readAsDataURL(b)});
+    }).catch(function(){return null});
+  }
+  var _bs=window.bilanShare;
+  if(typeof _bs==='function')window.bilanShare=function(){
+    var self=this,args=arguments;
+    Promise.all(MOOD5.map(function(m){return m.i?dataURL(m.i):null})).then(function(urls){
+      var keep=MOOD5.map(function(m){return m.s});
+      MOOD5.forEach(function(m,k){if(m.i&&urls[k])m.s=wrap(urls[k])});
+      try{_bs.apply(self,args)}finally{MOOD5.forEach(function(m,k){m.s=keep[k]})}
+    });
+  };
+})();
+
 render();

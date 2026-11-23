@@ -1,6 +1,6 @@
 /* Service worker - Mon agenda
    Pour publier une mise à jour : change le numéro de VERSION ci-dessous. */
-const VERSION = 'v38';
+const VERSION = 'v39';
 const CACHE = 'agenda-' + VERSION;
 const FONTS = 'agenda-fonts';
 const SHELL = [
@@ -53,6 +53,9 @@ const SHELL = [
   './img-mood-pe.webp',
   './img-mood-ra.webp',
   './img-mood-sp.webp',
+  './img-mood-tr.webp',
+  './img-mood-im.webp',
+  './img-mood-re.webp',
   './img-plage.webp',
   './img-plank.webp',
   './img-singe.webp',

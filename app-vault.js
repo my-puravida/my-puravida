@@ -544,7 +544,7 @@
   document.head.appendChild(st);
 })();
 
-/* ===== v38 : les humeurs utilisent les images img-mood-xx.webp (les autres gardent leur dessin) ===== */
+/* ===== v38 : les humeurs utilisent les images img-mood-xx.webp (Triste, Impatiente, Reconnaissante : des que leur image existe) ===== */
 (function(){
   /* nom de l'humeur -> code du fichier img-mood-<code>.webp */
   var MI={'Rayonnante':'ra','Heureuse':'he','Calme':'ca','Fatigu\u00e9e':'fa','Anxieuse':'an','Spirituelle':'sp','Motiv\u00e9e':'mo','Pensive':'pe','Nostalgique':'no'};
@@ -553,6 +553,17 @@
     var c=MI[m.n];if(!c)return;
     m.i='img-mood-'+c+'.webp';
     m.s=wrap(m.i);
+  });
+  /* nouvelle humeur : Excitee (ajoutee a la fin, les humeurs deja choisies ne bougent pas) */
+  if(!MOOD5.some(function(m){return m.n==='Excit\u00e9e'}))MOOD5.push({n:'Excit\u00e9e',i:'img-mood-ex.webp',s:wrap('img-mood-ex.webp')});
+  /* images pas encore envoyees : on garde le dessin tant que le fichier n'existe pas, puis on bascule sans rien casser */
+  var LATER={'Triste':'tr','Impatiente':'im','Reconnaissante':'re'},got=0,wait=0;
+  MOOD5.forEach(function(m){
+    var c=LATER[m.n];if(!c||m.i)return;
+    var src='img-mood-'+c+'.webp',im=new Image();wait++;
+    im.onload=function(){m.i=src;m.s=wrap(src);got++;if(--wait===0&&got)try{render()}catch(e){}};
+    im.onerror=function(){if(--wait===0&&got)try{render()}catch(e){}};
+    im.src=src;
   });
   /* partage du bilan en image : le canvas ne peut pas charger un fichier externe dans un SVG, on le met en base64 le temps du dessin */
   var cache={};

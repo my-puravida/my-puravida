@@ -122,3 +122,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 12: v42. Home page phrases (`.fc-qt`) reduced to 16 px via `style-late.css` (no `style.css` needed). `sw.js` at v42.
 - Step 13: v43. Weather icon 0 (sun, Matin/Aprem): `img-wx0.webp` replaced by the new silver sun; ring recolored to the deeper rose-gold of the other weather icons (512x512, transparent circle). Image only, no code change. `sw.js` at v43.
 - Step 14: v44. Day page: removed the heart ("Journée importante") at the top right: in the block "Page du jour : coeur" of `app-week-home.js` the button is no longer added (the old marker is still removed). `sw.js` at v44.
+- Step 15: v45. Day page: removed the crystals icon at the top right: in the block "Page du jour : icone Cristaux" of `app-week-home.js` the button is no longer added (the Cristaux overlay code stays, unused). `sw.js` at v45.

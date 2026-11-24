@@ -403,7 +403,7 @@ function mealClose(){var el=document.getElementById('mlsheet');if(el)el.parentNo
     var h=_dpc();
     if(h.indexOf('class="mhero')<0)return h;
     var btn='<button class="dcr" aria-label="Cristaux" onclick="ovOpen(\'crystal\')"><img src="'+IMG+'" alt=""></button>';
-    return h.replace(/<div class="mhero (has|nop)">/,function(m){return m+btn});
+    return h;
   };
   var _ov=ovUI;
   ovUI=function(){

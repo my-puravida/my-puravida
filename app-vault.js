@@ -438,26 +438,31 @@
 
 /* ===== v35 : humeurs Pensive et Nostalgique, nouvelles icones, accueil blanc gris, barre d'outils du bouton + ===== */
 (function(){
-  /* ---------- 1. Humeurs : Pensive et Nostalgique (ajoutees a la fin pour garder les humeurs deja choisies) ---------- */
-  var MF='<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><defs><radialGradient id="mfg" cx=".4" cy=".3" r=".9"><stop offset="0" stop-color="#f9f8f6"/><stop offset="1" stop-color="#f3e7e7"/></radialGradient></defs><circle cx="20" cy="20.5" r="17" fill="url(#mfg)" stroke="#39393b" stroke-width="1.5"/><ellipse cx="12" cy="9.5" rx="4" ry="2" fill="#fff" opacity=".7" transform="rotate(-25 12 9.5)"/>';
-  var CHK='<ellipse cx="9.8" cy="24.8" rx="3" ry="1.9" fill="#d9b0b6" opacity=".65"/><ellipse cx="30.2" cy="24.8" rx="3" ry="1.9" fill="#d9b0b6" opacity=".65"/>';
-  var PENS=MF
-    +'<ellipse cx="14" cy="20" rx="3" ry="3.3" fill="#fff" stroke="#39393b" stroke-width="1.2"/><circle cx="15.4" cy="18.7" r="1.4" fill="#39393b"/>'
-    +'<ellipse cx="26" cy="20" rx="3" ry="3.3" fill="#fff" stroke="#39393b" stroke-width="1.2"/><circle cx="27.4" cy="18.7" r="1.4" fill="#39393b"/>'
-    +'<path d="M10.5 15.2l5.5-1.6M24 12.8l5.5 1.7" stroke="#39393b" stroke-width="1.5" stroke-linecap="round"/>'
-    +'<path d="M16.5 27.5c2-.9 4.2-.8 6.5.3" stroke="#39393b" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
-    +CHK
-    +'<circle cx="31" cy="10.6" r="1" fill="#d9b0b6" stroke="#c48f97" stroke-width=".6"/><circle cx="33.6" cy="7.4" r="1.6" fill="#d9b0b6" stroke="#c48f97" stroke-width=".6"/><circle cx="36" cy="3.6" r="2.3" fill="#e8ced1" stroke="#c48f97" stroke-width=".6"/></svg>';
-  var NOST=MF
-    +'<path d="M11 19.5c1.6 2.3 4.4 2.3 6 0M23 19.5c1.6 2.3 4.4 2.3 6 0" stroke="#39393b" stroke-width="1.7" fill="none" stroke-linecap="round"/>'
-    +'<path d="M10.6 16l5-1.6M29.4 16l-5-1.6" stroke="#39393b" stroke-width="1.4" stroke-linecap="round"/>'
-    +'<path d="M16.5 26.2c1.8 1.7 5.2 1.7 7 0" stroke="#39393b" stroke-width="1.5" fill="none" stroke-linecap="round"/>'
-    +CHK
-    +'<path d="M14.2 23c1.2 1.5 1.5 2.5 0 3.2-1.5-.7-1.2-1.7 0-3.2z" fill="#b5b3b4" stroke="#929093" stroke-width=".7"/>'
-    +'<g transform="rotate(10 33.5 8.5)"><rect x="29.5" y="3.8" width="8" height="9.4" rx="1" fill="#fff" stroke="#39393b" stroke-width=".8"/><rect x="30.8" y="5.1" width="5.4" height="5.2" fill="#e8ced1"/></g></svg>';
-  [['Pensive',PENS],['Nostalgique',NOST]].forEach(function(o){
-    if(!MOOD5.some(function(m){return m.n===o[0]}))MOOD5.push({n:o[0],s:o[1]});
+  /* ---------- 1. Humeurs : visages de la planche (images), Excitee ajoutee a la fin ---------- */
+  var MI={'Rayonnante':'ra','Heureuse':'he','Calme':'ca','Fatigu\u00e9e':'fa','Anxieuse':'an','Spirituelle':'sp','Motiv\u00e9e':'mo','Nostalgique':'no','Pensive':'pe','Excit\u00e9e':'ex','Triste':'tr','Impatiente':'im','Reconnaissante':'re'};
+  function mFace(f,href){return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><image href="'+(href||'img-mood-'+f+'.webp')+'" width="40" height="40"/></svg>'}
+  ['Pensive','Nostalgique','Excit\u00e9e'].forEach(function(n){
+    if(!MOOD5.some(function(m){return m.n===n}))MOOD5.push({n:n,s:''});
   });
+  MOOD5.forEach(function(m){if(MI[m.n]){m.f=MI[m.n];m.s=mFace(MI[m.n])}});
+  /* le bilan en image a besoin du visage integre (data:) : on le prepare juste avant */
+  var _bil=window.bilanShare;
+  if(_bil){
+    window.bilanShare=function(){
+      var self=this,args=arguments;
+      Promise.all(MOOD5.map(function(m){return new Promise(function(res){
+        if(!m.f){res(null);return}
+        var im=new Image();
+        im.onload=function(){try{var c=document.createElement('canvas');c.width=c.height=120;c.getContext('2d').drawImage(im,0,0,120,120);res(c.toDataURL('image/png'))}catch(e){res(null)}};
+        im.onerror=function(){res(null)};
+        im.src='img-mood-'+m.f+'.webp';
+      })})).then(function(urls){
+        var sv=MOOD5.map(function(m){return m.s});
+        MOOD5.forEach(function(m,i){if(urls[i])m.s=mFace(m.f,urls[i])});
+        try{_bil.apply(self,args)}finally{MOOD5.forEach(function(m,i){m.s=sv[i]})}
+      });
+    };
+  }
 
   /* ---------- 2. Activites : 9 icones, Etirement avant Espagnol, plus de 30 min ---------- */
   [ACT,WST,ACTH].forEach(function(arr){for(var i=arr.length-1;i>=0;i--){if(arr[i][0]==='tm')arr.splice(i,1)}});
@@ -508,7 +513,14 @@
   homePage=function(){
     var h=_hpN();
     h=h.replace(/<div class="pbk"[^>]*><\/div><div class="pmenu p4">[\s\S]*?<\/div>/,'');
-    return h.replace('<div class="hwrap">','<div class="hwrap">'+pbar());
+    h=h.replace('<div class="hwrap">','<div class="hwrap">'+pbar());
+    /* les icones d'activites juste sous la carte : visibles sans derouler */
+    try{
+      var tpl=document.createElement('template');tpl.innerHTML=h;
+      var hero=tpl.content.querySelector('.hero'),act=tpl.content.querySelector('.act');
+      if(hero&&act&&hero.nextElementSibling!==act){hero.insertAdjacentElement('afterend',act);return tpl.innerHTML}
+    }catch(e){}
+    return h;
   };
 
   /* ---------- 6. Styles ---------- */
@@ -523,7 +535,7 @@
    +'.hxn{margin-top:14px;padding-top:16px;border-top:1px solid rgba(57,57,59,.22)}'
    +'.hxn .hxr{display:flex;justify-content:center;align-items:flex-start;gap:calc(var(--hxs)*.2)}'
    +'.hxn .hx2{margin-top:16px}'
-   +'.hxi{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:7px;font:inherit;color:#707072;cursor:pointer;-webkit-tap-highlight-color:transparent}'
+   +'.hxi{border:0;background:none;padding:0;display:flex;flex-direction:column;align-items:center;gap:7px;font:inherit;color:#525156;cursor:pointer;-webkit-tap-highlight-color:transparent}'
    +'.hxc{display:block;width:var(--hxs);height:var(--hxs);border-radius:50%;filter:drop-shadow(0 6px 7px rgba(57,57,59,.32))}'
    +'.hxc img{display:block;width:100%;height:100%;border-radius:50%;object-fit:cover}'
    +'.hxc.e{box-sizing:border-box;border:1.6px dashed rgba(57,57,59,.3);background:rgba(255,255,255,.45);filter:none}'
@@ -540,48 +552,17 @@
    +'.hwrap .pbar{top:90px}'
    +'.pbi{flex:0 0 auto;width:var(--bi);height:var(--bi);border:0;padding:0;background:none;border-radius:50%;cursor:pointer;-webkit-tap-highlight-color:transparent}'
    +'.pbi img{display:block;width:100%;height:100%;border-radius:50%;box-shadow:0 5px 8px -4px rgba(57,57,59,.5)}'
-   +'.pbi:active{transform:scale(.94)}';
+   +'.pbi:active{transform:scale(.94)}'
+   /* v38 : carte plus compacte, activites sous la carte, lettres en degrade charcoal */
+   +'.hero.hcal{padding:26px 20px 16px;margin:12px 6px 14px}'
+   +'.hero.hcal .hxn{margin-top:10px;padding-top:12px}.hero.hcal .hxn .hx2{margin-top:10px}.hxi{gap:5px}'
+   +'.hwrap>.act{margin:14px 0 12px}'
+   +'.hero.hcal .hg,.hero.hcal .hd2,.hero.hcal .hm2{background:linear-gradient(90deg,#2f2f31 0%,#525156 55%,#8a898b 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;text-shadow:none}'
+   +'.hero.hcal .hg{font-weight:600;letter-spacing:.34em}'
+   +'.hero.hcal .hd2{font-weight:700;letter-spacing:.26em}'
+   +'.hero.hcal .hm2{font-weight:600;letter-spacing:.3em}'
+   +'.hero.hcal .hn{background:linear-gradient(172deg,#2a2a2c 0%,#525156 52%,#908f91 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;text-shadow:none;filter:drop-shadow(0 2px 1px rgba(255,255,255,.75)) drop-shadow(0 7px 8px rgba(57,57,59,.22))}';
   document.head.appendChild(st);
-})();
-
-/* ===== v38 : les humeurs utilisent les images img-mood-xx.webp (Triste, Impatiente, Reconnaissante : des que leur image existe) ===== */
-(function(){
-  /* nom de l'humeur -> code du fichier img-mood-<code>.webp */
-  var MI={'Rayonnante':'ra','Heureuse':'he','Calme':'ca','Fatigu\u00e9e':'fa','Anxieuse':'an','Spirituelle':'sp','Motiv\u00e9e':'mo','Pensive':'pe','Nostalgique':'no'};
-  function wrap(src){return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><image href="'+src+'" width="40" height="40" preserveAspectRatio="xMidYMid meet"/></svg>'}
-  MOOD5.forEach(function(m){
-    var c=MI[m.n];if(!c)return;
-    m.i='img-mood-'+c+'.webp';
-    m.s=wrap(m.i);
-  });
-  /* nouvelle humeur : Excitee (ajoutee a la fin, les humeurs deja choisies ne bougent pas) */
-  if(!MOOD5.some(function(m){return m.n==='Excit\u00e9e'}))MOOD5.push({n:'Excit\u00e9e',i:'img-mood-ex.webp',s:wrap('img-mood-ex.webp')});
-  /* images pas encore envoyees : on garde le dessin tant que le fichier n'existe pas, puis on bascule sans rien casser */
-  var LATER={'Triste':'tr','Impatiente':'im','Reconnaissante':'re'},got=0,wait=0;
-  MOOD5.forEach(function(m){
-    var c=LATER[m.n];if(!c||m.i)return;
-    var src='img-mood-'+c+'.webp',im=new Image();wait++;
-    im.onload=function(){m.i=src;m.s=wrap(src);got++;if(--wait===0&&got)try{render()}catch(e){}};
-    im.onerror=function(){if(--wait===0&&got)try{render()}catch(e){}};
-    im.src=src;
-  });
-  /* partage du bilan en image : le canvas ne peut pas charger un fichier externe dans un SVG, on le met en base64 le temps du dessin */
-  var cache={};
-  function dataURL(src){
-    if(cache[src])return Promise.resolve(cache[src]);
-    return fetch(src).then(function(r){return r.blob()}).then(function(b){
-      return new Promise(function(res){var f=new FileReader();f.onload=function(){cache[src]=f.result;res(f.result)};f.onerror=function(){res(null)};f.readAsDataURL(b)});
-    }).catch(function(){return null});
-  }
-  var _bs=window.bilanShare;
-  if(typeof _bs==='function')window.bilanShare=function(){
-    var self=this,args=arguments;
-    Promise.all(MOOD5.map(function(m){return m.i?dataURL(m.i):null})).then(function(urls){
-      var keep=MOOD5.map(function(m){return m.s});
-      MOOD5.forEach(function(m,k){if(m.i&&urls[k])m.s=wrap(urls[k])});
-      try{_bs.apply(self,args)}finally{MOOD5.forEach(function(m,k){m.s=keep[k]})}
-    });
-  };
 })();
 
 render();

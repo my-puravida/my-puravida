@@ -150,7 +150,7 @@ function mealClose(){var el=document.getElementById('mlsheet');if(el)el.parentNo
     h=h.replace(/<i class="dmk[^"]*" role="button" aria-label="Marquer cette date" onclick="dstar\(\)"><\/i>/,'');
     var on=!!(dday&&dday.s);
     var btn='<button class="dhb'+(on?' on':'')+'" aria-label="Journ\u00e9e importante" aria-pressed="'+(on?'true':'false')+'" onclick="dstar()">'+HRT+'</button>';
-    return h.replace(/<div class="mhero (has|nop)">/,function(m){return m+btn});
+    return h;
   };
   var st=document.createElement('style');
   st.textContent='.dhb{position:absolute;top:14px;right:14px;z-index:6;width:38px;height:38px;border-radius:50%;border:0;padding:0;background:rgba(255,255,255,.88);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 10px -4px rgba(0,0,0,.3);transition:transform .15s}'

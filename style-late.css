@@ -16,3 +16,5 @@ main{background:linear-gradient(180deg,#faf9f8 0%,#eeeeec 60%,#e6e5e3 100%)!impo
 .wkc.today small{color:#39393b!important;font-weight:700!important}
 /* v42 : phrases de l'accueil plus petites */
 .fc-qt{font-size:16px!important;line-height:1.35!important}
+/* v47 : page du jour, encadre du haut (sans photo) comme la carte de l'accueil */
+.mhero.nop{background:linear-gradient(rgba(248,248,246,.58),rgba(238,238,236,.5)),var(--hb) center/cover no-repeat,#efefed!important}

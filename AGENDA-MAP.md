@@ -123,3 +123,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 13: v43. Weather icon 0 (sun, Matin/Aprem): `img-wx0.webp` replaced by the new silver sun; ring recolored to the deeper rose-gold of the other weather icons (512x512, transparent circle). Image only, no code change. `sw.js` at v43.
 - Step 14: v44. Day page: removed the heart ("Journée importante") at the top right: in the block "Page du jour : coeur" of `app-week-home.js` the button is no longer added (the old marker is still removed). `sw.js` at v44.
 - Step 15: v45. Day page: removed the crystals icon at the top right: in the block "Page du jour : icone Cristaux" of `app-week-home.js` the button is no longer added (the Cristaux overlay code stays, unused). `sw.js` at v45.
+- Step 16: v46. `img-wx0.webp` (sun): ring color matched to the measured ring of the other weather icons (deeper rose-copper), face slightly warmer. Image only. `sw.js` at v46.

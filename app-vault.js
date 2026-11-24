@@ -514,12 +514,6 @@
     var h=_hpN();
     h=h.replace(/<div class="pbk"[^>]*><\/div><div class="pmenu p4">[\s\S]*?<\/div>/,'');
     h=h.replace('<div class="hwrap">','<div class="hwrap">'+pbar());
-    /* les icones d'activites juste sous la carte : visibles sans derouler */
-    try{
-      var tpl=document.createElement('template');tpl.innerHTML=h;
-      var hero=tpl.content.querySelector('.hero'),act=tpl.content.querySelector('.act');
-      if(hero&&act&&hero.nextElementSibling!==act){hero.insertAdjacentElement('afterend',act);return tpl.innerHTML}
-    }catch(e){}
     return h;
   };
 
@@ -556,7 +550,6 @@
    /* v38 : carte plus compacte, activites sous la carte, lettres en degrade charcoal */
    +'.hero.hcal{padding:26px 20px 16px;margin:12px 6px 14px}'
    +'.hero.hcal .hxn{margin-top:10px;padding-top:12px}.hero.hcal .hxn .hx2{margin-top:10px}.hxi{gap:5px}'
-   +'.hwrap>.act{margin:14px 0 12px}'
    +'.hero.hcal .hg,.hero.hcal .hd2,.hero.hcal .hm2{background:linear-gradient(90deg,#2f2f31 0%,#525156 55%,#8a898b 100%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;text-shadow:none}'
    +'.hero.hcal .hg{font-weight:600;letter-spacing:.34em}'
    +'.hero.hcal .hd2{font-weight:700;letter-spacing:.26em}'

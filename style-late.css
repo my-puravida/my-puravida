@@ -11,3 +11,8 @@ main{background:linear-gradient(180deg,#faf9f8 0%,#eeeeec 60%,#e6e5e3 100%)!impo
 .hero.s-eve{background:linear-gradient(rgba(82,81,86,.38),rgba(82,81,86,.38)),var(--hb) center/cover no-repeat,#c48f97!important}
 .hero.s-night{background:linear-gradient(rgba(57,57,59,.62),rgba(57,57,59,.62)),var(--hb) center/cover no-repeat,#707072!important}
 .hero:not(.dpp)::before,.hero:not(.dpp)::after,.hero .hrg{display:none!important}
+/* v41 : rond du jour de "Cette semaine" en charcoal fonce */
+.wkc.today b{background:#3b3a3c!important;color:#fff!important;border:1px solid #b39a78!important;box-shadow:0 8px 12px -8px rgba(30,30,32,.7)!important}
+.wkc.today small{color:#39393b!important;font-weight:700!important}
+/* v42 : phrases de l'accueil plus petites */
+.fc-qt{font-size:16px!important;line-height:1.35!important}

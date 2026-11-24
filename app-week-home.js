@@ -100,7 +100,7 @@ function mealClose(){var el=document.getElementById('mlsheet');if(el)el.parentNo
     var h=_dpm();
     if(h.indexOf('<div class="d3o">')<0)return h;
     var y=dy[0],m=dy[1],d=dy[2],on=mkOn(y,m,d);
-    var b='<div class="d3m" role="button" aria-label="On a vu les singes" aria-pressed="'+(on?'true':'false')+'" onclick="mkTog('+y+','+m+','+d+')"><span class="mky'+(on?' on':'')+'"><i></i></span><small>Singes</small></div>';
+    var b='<div class="d3m" role="button" aria-label="On a vu les singes" aria-pressed="'+(on?'true':'false')+'" onclick="mkTog('+y+','+m+','+d+')"><span class="d3c'+(on?'':' off')+'"><img src="img-singe.webp" alt=""></span><small>Singes</small></div>';
     return h.replace('<div class="d3o">','<div class="d3o">'+b);
   };
   var _yr=yrHTML;

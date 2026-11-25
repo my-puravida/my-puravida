@@ -18,3 +18,14 @@ main{background:linear-gradient(180deg,#faf9f8 0%,#eeeeec 60%,#e6e5e3 100%)!impo
 .fc-qt{font-size:16px!important;line-height:1.35!important}
 /* v47 : page du jour, encadre du haut (sans photo) comme la carte de l'accueil */
 .mhero.nop{background:linear-gradient(rgba(248,248,246,.58),rgba(238,238,236,.5)),var(--hb) center/cover no-repeat,#efefed!important}
+/* v48 : medaillon du haut supprime partout */
+.hd{display:none!important}
+/* v48 : calendrier annuel, fond marbre + fleurs derriere les mois (mois blancs, ombre legere), textes charcoal degrade */
+#view:has(.yv:not(.pyv)){background:linear-gradient(rgba(248,248,246,.35),rgba(238,238,236,.3)),var(--hb) top center/100% auto no-repeat,#efefed!important;border-radius:20px;padding-bottom:14px}
+.yhd::before{display:none!important}
+.yv:not(.pyv) .grid .m{background:#fff!important;box-shadow:0 12px 24px -12px rgba(82,81,86,.32),0 2px 6px -2px rgba(82,81,86,.12)!important}
+.yv:not(.pyv) .grid .m::before{display:none!important}
+.yhd .yk,.yhd h1,.yv:not(.pyv) .grid .m h3{width:fit-content!important;margin-left:auto!important;margin-right:auto!important;background:linear-gradient(135deg,#39393b,#707072)!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important;color:transparent!important}
+.yv:not(.pyv) .grid .m th{color:#39393b!important}
+.yv:not(.pyv) .grid .m td,.yv:not(.pyv) .grid .m td:first-child{color:#39393b!important}
+.yv:not(.pyv) .grid .m td.o{color:#b9b8ba!important}

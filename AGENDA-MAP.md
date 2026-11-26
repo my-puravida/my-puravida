@@ -6,12 +6,12 @@ Attach this file to every modification request. Claude tells me which files to s
 ## Rules for every modification (Claude must follow)
 
 1. **Always ask me for `sw.js`**, every time, even for a tiny change. Return it with the version number raised (`const VERSION = 'v40'` -> `'v41'`, etc.), otherwise the phone keeps showing the old version.
-2. If a file is **added, renamed or deleted**, add or remove it in the `SHELL` list of `sw.js`.
+2. If a file is **added, renamed or deleted**, add or remove it in the `SHELL` list of `sw.js`. A new `.js` file must also get its `<script>` line in `index.html` (ask me for `index.html`).
 3. Use the "Screen -> files to ask for" table to decide which file(s) to request, and **only edit those**. Never guess the content of a file I have not sent.
 4. Return only the changed files, plus the updated `sw.js` and this map (with a new line in the change log).
 5. Show a preview first when possible, so I can ask for changes before uploading to GitHub.
 6. Keep changes small and in the right file. Do not re-embed images as base64 inside the code.
-7. **The last definition wins.** Before editing a function, check the later files in the load order (especially `app-vault.js` and `app-photos.js`) for a redefinition of the same function.
+7. **The last definition wins.** Before editing a function, check the later files in the load order (especially `app-vault.js`, `app-photos.js` and `app-photos-tab.js`) for a redefinition of the same function.
 
 ## Files
 
@@ -29,7 +29,7 @@ Attach this file to every modification request. Claude tells me which files to s
 
 | Order | File | Contents |
 |---|---|---|
-| 1 | `app-core1.js` | Base app: months, weeks, years, shopping list, meals, timer, special dates, themes, notes and calculator, beach and tides, Bitcoin, start of Vision board |
+| 1 | `app-core1.js` | Base app: `TABS`, `render()`, months, weeks, years, shopping list, meals, timer, special dates, themes, notes and calculator, beach and tides, Bitcoin, start of Vision board |
 | 2 | `app-core2.js` | Vision board, chores, home page, backup/restore (OLD versions, replaced by `app-photos.js`), exchange rates, bucket list, week planner, day page, past years, search, activity icons, swipe navigation |
 | 3 | `app-day.js` | Top-right menu, universal search, day page versions (photos, summary), weather of the day (`WXI`), statistics |
 | 4 | `app-icons.js` | Date icons (`DTI`), activity icons (`ACTIMG`), voice dictation, beach choice, post-its, magazine-style day page, week overview |
@@ -37,11 +37,14 @@ Attach this file to every modification request. Claude tells me which files to s
 | 6 | `app-day2.js` | Day page icons, photo viewer, 30 min timer, mood, power and water outages, notes sharing |
 | 7 | `app-extras.js` | Photo viewer with zoom, Vision board per year, tides 2027, live Bitcoin, backup reminder, moods and review, week strip, fireworks, voice and lock in notes |
 | 8 | `app-vault.js` | Secret vault (6-digit code, AES encryption), Aqua activity, outages in statistics, v35 block (moods, icons, + bar), v38/v39 block (mood images). Ends with the first `render()` call |
-| 9 | `app-photos.js` | **Loaded last.** Photo storage in IndexedDB (original + preview), migration of old base64 photos, adding/deleting photos (`dph`, `vbAdd`, `dpd`, `vbDel`), photo counter, **Backup screen** (`bkHTML`, 2 buttons: Tout exporter / Tout restaurer), export in zip parts (`agExportAll`), restore (`agRestoreAll`), share dialog (Proton Drive etc.). In the data, a photo is just a reference `idb:<id>` |
+| 9 | `app-photos.js` | Photo storage in IndexedDB (original + preview), migration of old base64 photos, adding/deleting photos (`dph`, `vbAdd`, `dpd`, `vbDel`), photo counter, **Backup screen** (`bkHTML`, 2 buttons: Tout exporter / Tout restaurer), export in zip parts (`agExportAll`), restore (`agRestoreAll`), share dialog (Proton Drive etc.). In the data, a photo is just a reference `idb:<id>` |
+| 10 | `app-photos-tab.js` | **Photos tab** (placed before the Memories icon): albums named by the user, "photo du mois" card, add/delete photos. Data: key `ag-albums` (refs `idb:<id>`, included in the backup), images in IndexedDB `agenda-photos` (same database as `app-photos.js`). Inserts `'Photos'` into `TABS` and redefines `render` and `swipeNav`. Must load after `app-photos.js` and before `app-cover.js` |
+| 11 | `app-cover.js` | **Loaded last.** Cover page with the daily quote, then the 4-digit code (SHA-256 fingerprint kept under `cvr-hash`, outside the backup). Uses `img-cover.webp` and `img-code.webp` |
 
 Notes:
 - The app was built in layers: many functions are defined several times and the **last definition wins**. When changing a behavior, check later files too.
 - `app-vault.js` ends with `render()`. `app-photos.js` loads after it and redefines the functions listed above. Anything about backup, restore or adding/deleting photos must be changed in `app-photos.js`, NOT in `app-core2.js` / `app-extras.js` (those edits would never show).
+- The Photos tab is handled in `app-photos-tab.js` (its `render` wrapper shows the Photos page only when no day, week or month page is open). `TABS` itself is still defined in `app-core1.js`: `["Accueil","Vision board","2026","2027","Passé"]`, and `Photos` is inserted before `Passé` at load. Code elsewhere that uses `cur>1` treats the tab as a year page, so check the wrapper before changing tab logic.
 - `style-late.css` loads after all the JS.
 
 ## Screen -> files to ask for
@@ -58,6 +61,8 @@ For a **purely visual change** (colors, sizes, spacing, fonts) ask for `style.cs
 | Month page | `app-core1.js` | `app-week-home.js` (month goals post-it) |
 | Annual calendar / years | `app-core1.js`, `app-core2.js` | `app-week-home.js` (artistic version) |
 | Vision board / Memories / Souvenirs | `app-core2.js` | `app-day2.js` (one board per year), `app-week-home.js`, `app-extras.js`, `app-photos.js` (adding/deleting photos) |
+| **Photos tab** (albums, photo du mois, banner, tab order) | **`app-photos-tab.js`** | `app-core1.js` (`TABS`, `render`), `app-photos.js` (storage, backup), `style-late.css` (tab bar look) |
+| Cover page and 4-digit code | `app-cover.js` | `style-late.css` |
 | Bucket list | `app-core2.js` | - |
 | Statistics | `app-core1.js` | `app-day.js` (time statistics), `app-vault.js` (outages) |
 | Shopping list | `app-core1.js`, `app-core2.js` | - |
@@ -102,6 +107,8 @@ For a **purely visual change** (colors, sizes, spacing, fonts) ask for `style.cs
 | `img-dt-cat / family / other / arr / dep.webp` | Important-date icons |
 | `img-crystal.webp` | Crystals icon |
 | `img-el.webp`, `img-wa.webp` | Electricity and water icons |
+| `img-photos-banner.webp` | Banner "Life is a collection of moments" at the top of the Photos tab (rounded rectangle, transparent corners, white marble inside, 800 px wide) |
+| `img-cover.webp`, `img-code.webp` | Cover page and code page (`app-cover.js`) |
 | `img-mk.png` | Old monkey cut-out. No longer used on the day page (now `img-singe.webp`); still referenced by old CSS of the home page |
 
 To change an image: same format, same file name, upload to replace it, then raise the `VERSION` in `sw.js`.
@@ -127,3 +134,5 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 17: v47. Day page: the top box without photo (`.mhero.nop`) now has the same background as the home page card (white-grey marble, `--hb`), in `style-late.css`. The day page CSS itself (not sent) was not read: this is an override. `sw.js` at v47.
 - Step 18: v48. Annual calendar page (2026 / 2027): the round medallion at the top (`img-header.webp`, the `.hd` block) is hidden on all pages via `style-late.css` (`.hd{display:none!important}`; the image file stays in the repo and in `SHELL`). The year page area (`#view:has(.yv:not(.pyv))`) now has the home card marble background `--hb` (`img-hero.webp`, flowers top right), the 12 month cards stay white with a soft grey shadow (pink circle and title halo removed). "Calendrier", the year and month names are charcoal gradient (#39393b to #707072); weekday letters and day numbers are charcoal (other-month days light grey). Only `style-late.css` changed (Memories page `.pyv` untouched). `sw.js` at v48.
 - Step 19: v49. Tabs bar (Accueil, Vision board, 2026, 2027, Memories icon): glass effect, shine and rose-gold gradient border, charcoal glass for the active tab, pearl cream bar behind (`nav:not(.bb)`, so the bottom bar of the week page is untouched). Only `style-late.css` changed (block "v49 : onglets", selectors `#tabs button` / `#tabs button.on`). `sw.js` at v49.
+- v50 (was not logged at the time): cover page with the daily quote and a 4-digit code (`app-cover.js`, `img-cover.webp`, `img-code.webp`), added to `SHELL`. `sw.js` at v50.
+- Step 20: v51. New **Photos** tab before the Memories icon: marble background `--hb` (same as the home page), banner `img-photos-banner.webp` at the top, a big "photo du mois" card (no text, soft shadow), albums with free names (editable at the top of each album, "Nouvel album" button, delete at the bottom), photos added with "+", ★ on a photo makes it the photo du mois, tap a photo to enlarge or delete it. New file `app-photos-tab.js` (load order 10, line added to `index.html` between `app-photos.js` and `app-cover.js`); `app-core1.js`, `app-photos.js` and `style-late.css` not changed. `sw.js` at v51 (new files in `SHELL`). Known limits: album photos are in the backup at preview size (1000 px), the originals are not in the zip files yet (needs `listPhotos` in `app-photos.js` to read `ag-albums`); album names are editable only inside an album, not yet on the album cards.

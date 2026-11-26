@@ -133,5 +133,31 @@
    +'#ptv img{max-width:100%;max-height:78vh;border-radius:12px}#ptv div{display:flex;gap:12px}'
    +'#ptv button{border:0;border-radius:999px;padding:10px 22px;font:600 13px sans-serif;letter-spacing:.1em;text-transform:uppercase;background:#fff;color:#39393b;cursor:pointer}';
   document.head.appendChild(st);
+  /* ---------- v52 : onglet "Dream board" (ex Vision board) : meme fond que Photos, bandeau, sans medaillon ni phrase ---------- */
+  TABS[1]='Dream board';
+  var _vpD=visionPage;
+  visionPage=function(){
+    var h=_vpD();
+    if(isPast())return h;
+    h=h.replace(/<button class="blc"[\s\S]*?<\/button>/,'');
+    h=h.replace(/<span class="vbk">[^<]*<\/span><h1 class="vbt">Vision board<\/h1><div class="dv"><i><\/i><\/div>/,'<img class="ptb" src="img-dream-banner.webp" alt="Dream board">');
+    h=h.replace(/<div class="vbm"[\s\S]*?<\/div>/,'');
+    return h.replace('<div class="vbg">','<div class="dmbl"><button class="lk" onclick="blOpen()">Bucket list ›</button></div><div class="vbg">');
+  };
+  var _bpD=bucketPage;
+  bucketPage=function(){return _bpD().replace('← Vision board','← Dream board')};
+  var _rdD=render;
+  render=function(){
+    var r=_rdD.apply(this,arguments),v=document.getElementById('view');
+    if(v)v.classList.toggle('dmv',TABS[cur]==='Dream board'&&dk===null&&wk===null&&mo===null&&ya===null);
+    return r;
+  };
+  var sd=document.createElement('style');
+  sd.textContent='#view.dmv{background:linear-gradient(rgba(248,248,246,.35),rgba(238,238,236,.3)),var(--hb) top center/100% auto no-repeat,#efefed;border-radius:20px;padding-bottom:14px}'
+   +'.vbp .vbh2{display:block;padding-top:0}.vbp .vbh2 .vbh{padding-top:0}'
+   +'.vbp .ptb{width:min(420px,96%);margin:4px auto 10px}'
+   +'.dmbl{text-align:center;margin:0 0 6px}'
+   +'#view.dmv .vbp::before{display:none}';
+  document.head.appendChild(sd);
   render();
 })();

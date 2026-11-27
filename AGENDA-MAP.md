@@ -5,7 +5,7 @@ Attach this file to every modification request. Claude tells me which files to s
 
 ## Rules for every modification (Claude must follow)
 
-1. **Always ask me for `sw.js`**, every time, even for a tiny change. Return it with the version number raised (`const VERSION = 'v55'` -> `'v56'`, etc.), otherwise the phone keeps showing the old version.
+1. **Always ask me for `sw.js`**, every time, even for a tiny change. Return it with the version number raised (`const VERSION = 'v56'` -> `'v57'`, etc.), otherwise the phone keeps showing the old version.
 2. If a file is **added, renamed or deleted**, add or remove it in the `SHELL` list of `sw.js`.
 3. Use the "Screen -> files to ask for" table to decide which file(s) to request, and **only edit those**. Never guess the content of a file I have not sent.
 4. Return only the changed files, plus the updated `sw.js` and this map (with a new line in the change log).
@@ -140,3 +140,4 @@ To change an image: same format, same file name, upload to replace it, then rais
 - Step 21: v53. Dream board banner recolored: the pink wash inside the glass is now white like the Photos banner (frame and text unchanged), and the jagged cream fringe around the frame is removed (`img-dream-banner.webp` replaced, 1200 px, transparent). Tabs bar (all tabs) made whiter and more 3D: pearl white fill, clear glass gloss, white reflection band, thicker bevel and drop shadow, light copper border instead of pink, charcoal glass for the active tab. Only the block "v53 : onglets" of `style-late.css` changed (it replaces the v49 block). `sw.js` at v53.
 - Step 22: v54. Tab "Dream board": text made smaller (8.5 px, less letter spacing) so the two words fit comfortably in the tab (`style-late.css`, last line, selector `#tabs button:nth-child(2)`: it targets the 2nd tab, so change it if the tab order changes). `sw.js` at v54.
 - Step 23: v55. Dream board page: the small "Bucket list ›" link is removed; a tap on the banner `img-dream-banner.webp` (class `ptbl`, `onclick=blOpen()`) now opens the bucket list. The 2026 / 2027 chips (`.vby button`) use the same white 3D glass style as the tabs (the selectors `#tabs button` in the v53 block of `style-late.css` now also list `.vby button`, plus a small "v55" block for size). Files: `app-photos-tab.js` (end block), `style-late.css`. `sw.js` at v55.
+- Step 24: v56. No code change. The white version of `img-dream-banner.webp` (step 21) had not reached the phone (the screenshot still showed the pink one), so the image is sent again and `sw.js` goes to v56 to force the phone to download it (images are served from the cache first). `sw.js` at v56.

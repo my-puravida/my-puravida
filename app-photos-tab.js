@@ -62,7 +62,7 @@
       h+='<div class="ptg">'+(PR?'':'<label class="ptad">+<input type="file" accept="image/*" multiple hidden onchange="ptAdd(this)"></label>');
       a.p.forEach(function(r,j){
         if(PR){h+='<div class="ptph pto" data-i="'+j+'"><img src="'+r+'" alt="" draggable="false">'+ctl('ptMvP',j)+'</div>';return}
-        var on=AL.f===r;h+='<div class="ptph" onclick="ptView('+j+')"><img src="'+r+'" alt=""><button class="ptst'+(on?' on':'')+'" aria-label="Photo du mois" onclick="event.stopPropagation();ptFav('+j+')">'+(on?'★':'☆')+'</button></div>';
+        var on=AL.f===r;h+='<div class="ptph" data-j="'+j+'" onclick="ptView('+j+')"><img src="'+r+'" alt="" draggable="false">'+(on?'<i class="ptsi">★</i>':'')+'</div>';
       });
       h+='</div>'+(PR?'':'<button class="ptbk ptdl" onclick="ptDelA()">Supprimer cet album</button>');
     }
@@ -125,7 +125,28 @@
   });
 
   /* ---------- v57 : visionneuse, on glisse d'une photo a l'autre ---------- */
+  /* appui long sur une photo : photo du mois */
+  var LP=0;
+  (function(){
+    var tm=null,sx=0,sy=0;
+    function stop(){if(tm){clearTimeout(tm);tm=null}}
+    document.addEventListener('pointerdown',function(e){
+      var it=e.target&&e.target.closest?e.target.closest('.ptph[data-j]'):null;if(!it)return;
+      stop();sx=e.clientX;sy=e.clientY;
+      tm=setTimeout(function(){
+        tm=null;LP=Date.now();
+        var j=+it.getAttribute('data-j'),r=AL.a[PO]&&AL.a[PO].p[j];if(!r)return;
+        var was=AL.f===r;window.ptFav(j);
+        try{if(navigator.vibrate)navigator.vibrate(30)}catch(x){}
+        toast(was?'Photo du mois retirée':'Photo du mois ★');setTimeout(function(){toast('')},1500);
+      },550);
+    });
+    document.addEventListener('pointermove',function(e){if(tm&&Math.hypot(e.clientX-sx,e.clientY-sy)>10)stop()});
+    document.addEventListener('pointerup',stop);document.addEventListener('pointercancel',stop);
+    document.addEventListener('contextmenu',function(e){if(e.target&&e.target.closest&&e.target.closest('.ptph'))e.preventDefault()});
+  })();
   window.ptView=function(j){
+    if(Date.now()-LP<700)return;
     var a=AL.a[PO];if(!a||!a.p[j])return;
     window.ptCl();VJ=j;
     var o=document.createElement('div');o.id='ptv';
@@ -203,7 +224,8 @@
    +'.pta .ptdh{top:auto;bottom:8px;left:8px}.pta .ptar{top:auto;bottom:8px;right:8px}'
    +'.ptg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}'
    +'.ptph{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:1/1;background:#f1f0ee;box-shadow:0 16px 24px -8px rgba(57,57,59,.6),0 4px 8px -2px rgba(57,57,59,.3)}.ptph img{width:100%;height:100%;object-fit:cover;display:block}'
-   +'.ptst{position:absolute;right:5px;top:5px;width:28px;height:28px;border-radius:50%;border:0;background:rgba(255,255,255,.88);color:#b5b3b4;font-size:15px;cursor:pointer}.ptst.on{color:#ac727e}'
+   +'.ptsi{position:absolute;right:5px;top:5px;width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.92);color:#ac727e;font-style:normal;font-size:10px;line-height:1;display:flex;align-items:center;justify-content:center;pointer-events:none}'
+   +'.ptph img{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}'
    +'.ptad{display:flex;align-items:center;justify-content:center;aspect-ratio:1/1;border:2px dashed #d9b0b6;border-radius:14px;color:#ac727e;font-size:30px;background:rgba(255,255,255,.5);cursor:pointer}'
    /* v57 : visionneuse a balayage */
    +'#ptv{position:fixed;inset:0;z-index:9000;background:rgba(30,30,32,.96);display:flex;flex-direction:column}'

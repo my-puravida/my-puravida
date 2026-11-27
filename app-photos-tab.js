@@ -140,9 +140,9 @@
     var h=_vpD();
     if(isPast())return h;
     h=h.replace(/<button class="blc"[\s\S]*?<\/button>/,'');
-    h=h.replace(/<span class="vbk">[^<]*<\/span><h1 class="vbt">Vision board<\/h1><div class="dv"><i><\/i><\/div>/,'<img class="ptb" src="img-dream-banner.webp" alt="Dream board">');
+    h=h.replace(/<span class="vbk">[^<]*<\/span><h1 class="vbt">Vision board<\/h1><div class="dv"><i><\/i><\/div>/,'<img class="ptb ptbl" role="button" tabindex="0" onclick="blOpen()" src="img-dream-banner.webp" alt="Dream board : ouvrir ma bucket list">');
     h=h.replace(/<div class="vbm"[\s\S]*?<\/div>/,'');
-    return h.replace('<div class="vbg">','<div class="dmbl"><button class="lk" onclick="blOpen()">Bucket list ›</button></div><div class="vbg">');
+    return h;
   };
   var _bpD=bucketPage;
   bucketPage=function(){return _bpD().replace('← Vision board','← Dream board')};
@@ -156,7 +156,7 @@
   sd.textContent='#view.dmv{background:linear-gradient(rgba(248,248,246,.35),rgba(238,238,236,.3)),var(--hb) top center/100% auto no-repeat,#efefed;border-radius:20px;padding-bottom:14px}'
    +'.vbp .vbh2{display:block;padding-top:0}.vbp .vbh2 .vbh{padding-top:0}'
    +'.vbp .ptb{width:min(420px,96%);margin:4px auto 10px}'
-   +'.dmbl{text-align:center;margin:0 0 6px}'
+   +'.ptbl{cursor:pointer;-webkit-tap-highlight-color:transparent}.ptbl:active{transform:scale(.985)}'
    +'#view.dmv .vbp::before{display:none}';
   document.head.appendChild(sd);
   render();

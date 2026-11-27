@@ -239,8 +239,11 @@
   /* ---------- v52 : onglet "Dream board" (ex Vision board) : meme fond que Photos, bandeau, sans medaillon ni phrase ---------- */
   TABS[1]='Dream board';
   var _vpD=visionPage;
+  /* v62 : legende des photos sur plusieurs lignes, la zone s'agrandit toute seule */
+  window.capGrow=function(el){el.style.height='auto';el.style.height=el.scrollHeight+'px'};
   visionPage=function(){
     var h=_vpD();
+    h=h.replace(/<input class="cap" value="([^"]*)" placeholder="([^"]*)" oninput="vbCap\((\d+),this\.value\)">/g,function(m,v,ph,i){return '<textarea class="cap" rows="1" placeholder="'+ph+'" oninput="vbCap('+i+',this.value);capGrow(this)">'+v+'</textarea>'});
     if(isPast())return h;
     h=h.replace(/<button class="blc"[\s\S]*?<\/button>/,'');
     h=h.replace(/<span class="vbk">[^<]*<\/span><h1 class="vbt">Vision board<\/h1><div class="dv"><i><\/i><\/div>/,'<img class="ptb ptbl" role="button" tabindex="0" onclick="blOpen()" src="img-dream-banner.webp" alt="Dream board : ouvrir ma bucket list">');
@@ -253,6 +256,8 @@
   render=function(){
     var r=_rdD.apply(this,arguments),v=document.getElementById('view');
     if(v)v.classList.toggle('dmv',TABS[cur]==='Dream board'&&dk===null&&wk===null&&mo===null&&ya===null);
+    var cs=document.querySelectorAll('textarea.cap');
+    if(cs.length){[].forEach.call(cs,window.capGrow);requestAnimationFrame(function(){[].forEach.call(document.querySelectorAll('textarea.cap'),window.capGrow)})}
     return r;
   };
   var sd=document.createElement('style');
@@ -260,7 +265,8 @@
    +'.vbp .vbh2{display:block;padding-top:0}.vbp .vbh2 .vbh{padding-top:0}'
    +'.vbp .ptb{width:min(420px,96%);margin:4px auto 10px}'
    +'.ptbl{cursor:pointer;-webkit-tap-highlight-color:transparent}.ptbl:active{transform:scale(.985)}'
-   +'#view.dmv .vbp::before{display:none}';
+   +'#view.dmv .vbp::before{display:none}'
+   +'textarea.cap{display:block;resize:none;overflow:hidden;line-height:1.25;min-height:1.9em;white-space:pre-wrap;font-family:\'Caveat\',\'Lora\',cursive}';
   document.head.appendChild(sd);
   render();
 })();

@@ -1,6 +1,8 @@
 /* Photos : stockage IndexedDB (original + aperçu), migration, sauvegarde, compteur.
    Chargé en dernier : redéfinit dph, vbAdd, dpd, vbDel, bkExport, bkHTML (écran Sauvegarde : 2 boutons).
-   Dans les données (localStorage) une photo n'est plus qu'une référence "idb:<id>". */
+   Dans les données (localStorage) une photo n'est plus qu'une référence "idb:<id>".
+   v63 : les originaux des albums (onglet Photos, clé ag-albums) sont dans les zip et remis à la restauration ;
+         la photo du mois reste liée à sa photo d'album après restauration. */
 (function(){
   'use strict';
   var DBN='agenda-photos',DBP=null,TH={},FU={},RT={};
@@ -76,7 +78,7 @@
   function dropRef(s){
     if(typeof s!=='string'||s.indexOf('idb:')!==0)return;
     var id=s.slice(4);
-    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(/^(ag-vb(-\d{4})?|agd-\d+-\d+-\d+)$/.test(k)&&(localStorage.getItem(k)||'').indexOf('idb:'+id)>=0)return}}catch(e){}
+    try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(/^(ag-vb(-\d{4})?|agd-\d+-\d+-\d+|ag-albums)$/.test(k)&&(localStorage.getItem(k)||'').indexOf('idb:'+id)>=0)return}}catch(e){}
     if(TH[id]){try{URL.revokeObjectURL(TH[id])}catch(e){}delete RT[TH[id]];delete TH[id]}
     del('full',id);del('thumb',id);
   }
@@ -87,6 +89,27 @@
   }
   function b2d(b){
     return new Promise(function(res){var r=new FileReader();r.onload=function(){res(r.result)};r.onerror=function(){res(null)};r.readAsDataURL(b)});
+  }
+
+  /* ---------- photo du mois : on la note par sa place dans l'album (@album:photo) pendant la sauvegarde ---------- */
+  function favMark(v){
+    try{
+      var o=JSON.parse(v);
+      if(o&&o.f&&o.a){
+        for(var ai=0;ai<o.a.length;ai++){
+          var p=(o.a[ai]&&o.a[ai].p)||[];
+          for(var j=0;j<p.length;j++){if(p[j]===o.f){o.f='@'+ai+':'+j;return JSON.stringify(o)}}
+        }
+      }
+    }catch(e){}
+    return v;
+  }
+  function favResolve(v){
+    try{
+      var o=JSON.parse(v),m=o&&typeof o.f==='string'?/^@(\d+):(\d+)$/.exec(o.f):null;
+      if(m){var a=o.a&&o.a[+m[1]];o.f=(a&&a.p&&a.p[+m[2]])||'';return JSON.stringify(o)}
+    }catch(e){}
+    return v;
   }
 
   /* ---------- affichage : <img src="idb:id"> devient une URL locale ---------- */
@@ -220,7 +243,9 @@
     return ks.reduce(function(p,k){
       return p.then(function(){
         toast('Restauration… '+(++i)+' / '+ks.length);
-        return toRefs(d[k]).then(function(v){localStorage.setItem(k,v)});
+        var alb=k==='ag-albums';
+        /* albums : la photo du mois est notée par sa place (aussi pour les anciennes sauvegardes) pour ne pas devenir une copie à part */
+        return toRefs(alb?favMark(d[k]):d[k]).then(function(v){localStorage.setItem(k,alb?favResolve(v):v)});
       });
     },Promise.resolve());
   }
@@ -280,16 +305,26 @@
   function p2(n){return (n<10?'0':'')+n}
   function listPhotos(){
     var out=[];
-    try{for(var i=0;i<localStorage.length;i++){
-      var k=localStorage.key(i),m=/^agd-(\d+)-(\d+)-(\d+)$/.exec(k),o;
-      if(m){
-        o=JSON.parse(localStorage.getItem(k)||'{}');
-        (o.p||[]).forEach(function(r,j){if(typeof r==='string'&&r.indexOf('idb:')===0)out.push({id:r.slice(4),name:'jour/'+m[1]+'-'+p2(+m[2])+'-'+p2(+m[3])+'_'+(j+1)})});
-      }else if(/^ag-vb(-\d{4})?$/.test(k)){
-        o=JSON.parse(localStorage.getItem(k)||'{}');
-        (o.p||[]).forEach(function(p,j){if(p&&typeof p.s==='string'&&p.s.indexOf('idb:')===0)out.push({id:p.s.slice(4),name:'vision/'+k+'_'+(j+1)})});
-      }
-    }}catch(e){}
+    var keys=[];
+    try{for(var i=0;i<localStorage.length;i++)keys.push(localStorage.key(i))}catch(e){}
+    keys.forEach(function(k){
+      try{
+        var m=/^agd-(\d+)-(\d+)-(\d+)$/.exec(k),o;
+        if(m){
+          o=JSON.parse(localStorage.getItem(k)||'{}');
+          (o.p||[]).forEach(function(r,j){if(typeof r==='string'&&r.indexOf('idb:')===0)out.push({id:r.slice(4),name:'jour/'+m[1]+'-'+p2(+m[2])+'-'+p2(+m[3])+'_'+(j+1)})});
+        }else if(/^ag-vb(-\d{4})?$/.test(k)){
+          o=JSON.parse(localStorage.getItem(k)||'{}');
+          (o.p||[]).forEach(function(p,j){if(p&&typeof p.s==='string'&&p.s.indexOf('idb:')===0)out.push({id:p.s.slice(4),name:'vision/'+k+'_'+(j+1)})});
+        }else if(k==='ag-albums'){
+          /* albums de l'onglet Photos : album/<n° album>_<n° photo> */
+          o=JSON.parse(localStorage.getItem(k)||'{}');
+          (o.a||[]).forEach(function(a,ai){
+            ((a&&a.p)||[]).forEach(function(r,j){if(typeof r==='string'&&r.indexOf('idb:')===0)out.push({id:r.slice(4),name:'album/'+(ai+1)+'_'+(j+1)})});
+          });
+        }
+      }catch(e){}   /* une clé abîmée ne doit pas faire perdre les autres photos */
+    });
     return out;
   }
   function extOf(b){var t=(b&&b.type)||'';return t.indexOf('png')>=0?'png':t.indexOf('webp')>=0?'webp':t.indexOf('heic')>=0?'heic':t.indexOf('heif')>=0?'heif':'jpg'}
@@ -368,7 +403,9 @@
     try{for(var i=0;i<localStorage.length;i++){
       var k=localStorage.key(i);
       if(/^(ag|agw|agd)-/.test(k)&&k!=='ag-lastbk'){
-        var v=localStorage.getItem(k)||'';d[k]=v;
+        var v=localStorage.getItem(k)||'';
+        if(k==='ag-albums')v=favMark(v);
+        d[k]=v;
         v.replace(/idb:[a-z0-9]+/g,function(m){ids[m]=1});
       }
     }}catch(e){}
@@ -433,14 +470,21 @@
     });
   }
   function targetRef(name){
-    var m=/^(jour|vision)\/(.+?)_(\d+)(?:__[a-z0-9]+)?\.[a-z0-9]+$/i.exec(name);
+    var m=/^(jour|vision|album)\/(.+?)_(\d+)(?:__[a-z0-9]+)?\.[a-z0-9]+$/i.exec(name);
     if(!m)return null;
-    var key,idx=parseInt(m[3],10)-1,o;
+    var key,idx=parseInt(m[3],10)-1,o,r;
     if(m[1]==='jour'){var d=/^(\d+)-(\d+)-(\d+)$/.exec(m[2]);if(!d)return null;key='agd-'+d[1]+'-'+parseInt(d[2],10)+'-'+parseInt(d[3],10)}
+    else if(m[1]==='album')key='ag-albums';
     else key=m[2];
     try{o=JSON.parse(localStorage.getItem(key)||'null')}catch(e){return null}
-    if(!o||!o.p)return null;
-    var r=o.p[idx];if(r&&typeof r==='object')r=r.s;
+    if(!o)return null;
+    if(m[1]==='album'){
+      var a=o.a&&o.a[parseInt(m[2],10)-1];
+      r=a&&a.p&&a.p[idx];
+    }else{
+      if(!o.p)return null;
+      r=o.p[idx];if(r&&typeof r==='object')r=r.s;
+    }
     return(typeof r==='string'&&r.indexOf('idb:')===0)?r.slice(4):null;
   }
   function importZips(files){

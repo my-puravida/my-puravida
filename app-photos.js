@@ -2,7 +2,8 @@
    Chargé en dernier : redéfinit dph, vbAdd, dpd, vbDel, bkExport, bkHTML (écran Sauvegarde : 2 boutons).
    Dans les données (localStorage) une photo n'est plus qu'une référence "idb:<id>".
    v63 : les originaux des albums (onglet Photos, clé ag-albums) sont dans les zip et remis à la restauration ;
-         la photo du mois reste liée à sa photo d'album après restauration. */
+         la photo du mois reste liée à sa photo d'album après restauration.
+   v64 : zip de 45 Mo maximum et un bouton « Partager » par partie (Chrome refuse plus de 50 Mo par partage). */
 (function(){
   'use strict';
   var DBN='agenda-photos',DBP=null,TH={},FU={},RT={};
@@ -377,24 +378,32 @@
     o.innerHTML='<div style="background:#faf8f6;border-radius:22px;padding:22px;max-width:340px;width:100%;font:15px/1.4 sans-serif;color:#444;text-align:center">'
       +'<p style="margin:0 0 4px;font-size:18px">Sauvegarde prête</p>'
       +'<p style="margin:0 0 12px;color:#895a64">'+files.length+' fichier(s) zip · '+fmt(tot)+(nPhotos?' · '+nPhotos+' photos originales':'')+'</p>'
-      +'<button id="phsh1" style="'+bs+';background:#895a64;color:#fff;border-style:solid;border-color:#895a64">Partager</button>'
+      +sfiles.map(function(f,i){return '<button id="phsh1-'+i+'" style="'+bs+';background:#895a64;color:#fff;border-style:solid;border-color:#895a64">'+(sfiles.length>1?'Partager partie '+(i+1)+' / '+sfiles.length:'Partager')+'</button>'}).join('')
       +'<p style="margin:12px 0 0;font-size:12px;color:#999">Chrome n’accepte pas le partage de fichiers .zip : ils sont envoyés avec « .txt » à la fin du nom (ex. …partie1-sur-1.zip.txt). Garde-les tels quels, « Tout restaurer » les reconnaît.</p>'
       +'<button id="phsh2" style="'+bs+'">Télécharger sur le téléphone</button>'
       +'<button id="phsh3" style="'+bs+';border:0;background:transparent;color:#999">Fermer</button></div>';
     document.body.appendChild(o);
-    var tries=0,b1=document.getElementById('phsh1');
-    b1.onclick=function(){
-      /* un seul appel, directement dans le toucher (sinon Chrome refuse : "user gesture") */
-      var data=tries===0?{files:sfiles,title:'Sauvegarde agenda'}:{files:sfiles};
-      var p;
-      try{p=navigator.share(data)}catch(e){p=Promise.reject(e)}
-      p.then(function(){o.remove();markBackup()}).catch(function(e){
-        if(e&&e.name==='AbortError')return;
-        tries++;
-        b1.textContent='Réessayer (mode simple)';
-        alert('Le partage n’a pas fonctionné.\nDétail : '+(e&&e.name?e.name:'?')+(e&&e.message?' – '+String(e.message).slice(0,160):'')+'\nTu peux réessayer, ou utiliser « Télécharger sur le téléphone ».');
-      });
-    };
+    /* v64 : Chrome refuse un partage de plus de 50 Mo ("Permission denied") : un bouton par partie (moins de 45 Mo chacune) */
+    var done={},nDone=0;
+    sfiles.forEach(function(f,i){
+      var b1=document.getElementById('phsh1-'+i),tries=0;
+      b1.onclick=function(){
+        /* un seul appel, directement dans le toucher (sinon Chrome refuse : "user gesture") */
+        var data=tries===0?{files:[f],title:'Sauvegarde agenda '+(i+1)+'/'+sfiles.length}:{files:[f]};
+        var p;
+        try{p=navigator.share(data)}catch(e){p=Promise.reject(e)}
+        p.then(function(){
+          if(!done[i]){done[i]=1;nDone++}
+          b1.textContent='✓ Partie '+(i+1)+' envoyée';b1.style.opacity='.55';
+          if(nDone===sfiles.length){o.remove();markBackup()}
+        }).catch(function(e){
+          if(e&&e.name==='AbortError')return;
+          tries++;
+          b1.textContent='Réessayer partie '+(i+1);
+          alert('Le partage n’a pas fonctionné.\nDétail : '+(e&&e.name?e.name:'?')+(e&&e.message?' – '+String(e.message).slice(0,160):'')+'\nTu peux réessayer, ou utiliser « Télécharger sur le téléphone ».');
+        });
+      };
+    });
     document.getElementById('phsh2').onclick=function(){o.remove();downloadFiles(files,nPhotos)};
     document.getElementById('phsh3').onclick=function(){o.remove()};
   }
@@ -419,7 +428,7 @@
   }
   /* Tout exporter : uniquement des fichiers zip. Le 1er contient la sauvegarde (sauvegarde.json) */
   window.agExportAll=function(maxBytes){
-    var MAX=(typeof maxBytes==='number'&&maxBytes>0)?maxBytes:250*1048576,list=listPhotos();
+    var MAX=(typeof maxBytes==='number'&&maxBytes>0)?maxBytes:45*1048576,list=listPhotos();
     toast('Préparation…');
     buildBackupJSON().then(function(json){
       var jb=new Blob([json],{type:'application/json'});
@@ -444,7 +453,7 @@
             return new File([zipBlob(en)],'agenda-sauvegarde-'+ds+'-partie'+(i+1)+'-sur-'+parts.length+'.zip',{type:'application/zip'});
           });
           var canShare=false;
-          try{canShare=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:files.map(function(f){return new File([f],f.name+'.txt',{type:'text/plain'})})}))}catch(e){}
+          try{canShare=!!(navigator.share&&navigator.canShare&&navigator.canShare({files:[new File([files[0]],files[0].name+'.txt',{type:'text/plain'})]}))}catch(e){}
           if(canShare)shareDialog(files,list.length);
           else downloadFiles(files,list.length);
         });

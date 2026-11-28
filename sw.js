@@ -1,6 +1,6 @@
 /* Service worker - Mon agenda
    Pour publier une mise à jour : change le numéro de VERSION ci-dessous. */
-const VERSION = 'v62';
+const VERSION = 'v63';
 const CACHE = 'agenda-' + VERSION;
 const FONTS = 'agenda-fonts';
 const SHELL = [
@@ -23,6 +23,7 @@ const SHELL = [
   './app-vault.js',
   './app-photos.js',
   './app-photos-tab.js',
+  './app-day3.js',
   './app-cover.js',
   './img-cover.webp',
   './img-code.webp',
